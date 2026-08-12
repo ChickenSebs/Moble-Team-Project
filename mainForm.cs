@@ -611,6 +611,9 @@ namespace calendar4
 
                 case TabType.Calendar:
                 default:
+
+                    var calCtrl = new CalendarControl(loggedInUserId)
+
                     var calCtrl = new CalendarControl
                     {
                         Dock = DockStyle.Fill
