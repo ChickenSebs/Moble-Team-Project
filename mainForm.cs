@@ -109,6 +109,7 @@ namespace calendar4
         {
             alarmManager?.Dispose();
             SaveTabs();
+            Application.Exit();
         }
 
         private void InitUIStyleEvents()
