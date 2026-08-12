@@ -1,9 +1,11 @@
-﻿using System;
+﻿using calendar4.Services;
+using System;
 using System.Collections.Generic;
 using System.Drawing;
 using System.IO;
 using System.Text.Json;
 using System.Windows.Forms;
+using calendar4.Services;
 
 namespace calendar4
 {
@@ -14,6 +16,8 @@ namespace calendar4
 
         private DataGridView dgv;
         private readonly CalendarScheduleRepository scheduleRepository = new();
+        private readonly CalendarDbRepository calendarDbRepository = new();
+        private readonly int loggedInUserId;
         private readonly CalendarMonthCellRenderer monthCellRenderer =
             new(PersonalCategoryStores.Calendar);
 
@@ -36,8 +40,9 @@ namespace calendar4
             Day
         }
 
-        public CalendarControl()
+        public CalendarControl(int userId)
         {
+            loggedInUserId = userId;
             InitializeUserControl();
             LoadSchedules();
         }
@@ -667,16 +672,42 @@ namespace calendar4
         {
             try
             {
+                // 기존 로컬 저장
                 scheduleRepository.Save(scheduleMap);
+
+                // DB 저장
+                calendarDbRepository.Save(
+                    loggedInUserId,
+                    scheduleMap);
             }
-            catch
+            catch (Exception ex)
             {
+                MessageBox.Show(
+                    $"일정을 DB에 저장하는 중 오류가 발생했습니다.\n\n{ex.Message}",
+                    "DB 저장 오류",
+                    MessageBoxButtons.OK,
+                    MessageBoxIcon.Error);
             }
         }
 
         public void LoadSchedules()
         {
-            scheduleMap = scheduleRepository.Load();
+            try
+            {
+                scheduleMap =
+                    calendarDbRepository.Load(loggedInUserId);
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show(
+                    $"일정을 불러오는 중 오류가 발생했습니다.\n\n{ex.Message}",
+                    "DB 불러오기 오류",
+                    MessageBoxButtons.OK,
+                    MessageBoxIcon.Error);
+
+                scheduleMap =
+                    new Dictionary<DateTime, List<CalendarScheduleEntry>>();
+            }
         }
     }
 
