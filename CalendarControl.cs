@@ -4,6 +4,7 @@ using System.Drawing;
 using System.IO;
 using System.Text.Json;
 using System.Windows.Forms;
+using System.Linq;
 
 namespace calendar4
 {
@@ -81,7 +82,38 @@ namespace calendar4
             dgv.CellPainting +=
                 DgvCalendar_CellPainting;
 
+            // ✨ 마우스가 캘린더 위로 올라오면 포커스를 주어 휠 이벤트를 받을 수 있게 함
+            dgv.MouseEnter += (s, e) => dgv.Focus();
+
+            // ✨ 마우스 휠 이벤트 추가
+            dgv.MouseWheel += DgvCalendar_MouseWheel;
+
             Controls.Add(dgv);
+        }
+
+        // ✨ 휠 스크롤 처리 메서드 추가
+        private void DgvCalendar_MouseWheel(object? sender, MouseEventArgs e)
+        {
+            // 위로 굴리면 음수(-1)로 과거(이전 달/주/일) 이동, 아래로 굴리면 양수(1)로 미래 이동
+            int moveDirection = e.Delta > 0 ? -1 : 1;
+
+            switch (viewMode)
+            {
+                case CalendarViewMode.Month:
+                    currentDate = currentDate.AddMonths(moveDirection);
+                    break;
+
+                case CalendarViewMode.Week:
+                    currentDate = currentDate.AddDays(moveDirection * 7);
+                    break;
+
+                case CalendarViewMode.Day:
+                    currentDate = currentDate.AddDays(moveDirection);
+                    break;
+            }
+
+            UpdateView();
+            DateOrScheduleChanged?.Invoke(this, EventArgs.Empty);
         }
 
         public void SetViewMode(CalendarViewMode newMode)
@@ -679,5 +711,4 @@ namespace calendar4
             scheduleMap = scheduleRepository.Load();
         }
     }
-
 }
