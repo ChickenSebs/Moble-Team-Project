@@ -1,14 +1,12 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Drawing;
-using System.Globalization;
 using System.IO;
-using System.Linq; // [추가] System.Linq 사용을 위해 추가
 using System.Net.Http;
 using System.Text.Json;
 using System.Windows.Forms;
 using System.Xml.Linq;
-using tap;
+using System.Globalization;
 
 namespace calendar4
 {
@@ -251,53 +249,6 @@ namespace calendar4
             );
 
             RefreshAllViews();
-
-            // [추가] 작은 달력에서 날짜 변경 시 스터디 플래너 연동 처리 호출
-            OpenOrUpdatePlannerForDate(currentMonth);
-        }
-
-        // [추가] 날짜 선택 시 해당 날짜의 스터디 플래너 탭을 찾아 이동하거나 생성하는 메서드
-        private void OpenOrUpdatePlannerForDate(DateTime selectedDate)
-        {
-            TabPage? plannerTab = null;
-            PlannerControl? plannerCtrl = null;
-
-            // 1. 기존 탭 중 PlannerControl을 담고 있는 탭 찾기
-            foreach (TabPage tab in tabControl1.TabPages)
-            {
-                if (tab.Controls.Count > 0 && tab.Controls[0] is PlannerControl ctrl)
-                {
-                    plannerTab = tab;
-                    plannerCtrl = ctrl;
-                    break;
-                }
-            }
-
-            // 2. 스터디 플래너 탭이 없으면 새로 생성
-            if (plannerTab == null)
-            {
-                int plusIndex = tabControl1.TabPages.Count - 1;
-                if (plusIndex >= 0 && tabControl1.TabPages[plusIndex].Text == "+")
-                {
-                    tabControl1.TabPages.RemoveAt(plusIndex);
-                }
-
-                plannerTab = CreateTabPage("스터디 플래너", TabType.Planner);
-                plannerCtrl = plannerTab.Controls[0] as PlannerControl;
-
-                tabControl1.TabPages.Add(new TabPage("+"));
-            }
-
-            // 3. 해당 탭으로 화면 전환
-            tabControl1.SelectedTab = plannerTab;
-
-            // 4. PlannerControl에 SetTargetDate 혹은 SetDate 메서드가 정의되어 있다면 날짜 설정
-            // (PlannerControl 구현 방식에 맞춰 필요 시 호출)
-            if (plannerCtrl != null)
-            {
-                var method = plannerCtrl.GetType().GetMethod("SetTargetDate") ?? plannerCtrl.GetType().GetMethod("SetDate");
-                method?.Invoke(plannerCtrl, new object[] { selectedDate });
-            }
         }
 
         private void SyncSmallCalendar()
@@ -814,20 +765,6 @@ namespace calendar4
             CreateTabPage(
                 "개인 캘린더",
                 TabType.Calendar);
-        }
-
-        private void btnMy_Click(object sender, EventArgs e)
-        {
-            this.Close();
-            Mypage mypage = new Mypage(this.loggedInUserId);
-            mypage.ShowDialog();
-        }
-
-        private void btn_exit_Click(object sender, EventArgs e)
-        {
-            this.Close();
-            Login login = new Login();
-            login.ShowDialog();
         }
     }
 }
