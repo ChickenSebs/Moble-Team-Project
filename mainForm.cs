@@ -960,6 +960,13 @@ namespace calendar4
 
                 default:
 
+
+                    var calCtrl = new CalendarControl(loggedInUserId)
+                    {
+                        Dock = DockStyle.Fill
+                    };
+
+
                     var calCtrl =
                         new CalendarControl(
                             loggedInUserId)
