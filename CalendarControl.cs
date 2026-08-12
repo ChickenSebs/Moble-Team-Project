@@ -15,7 +15,6 @@ namespace calendar4
             new Dictionary<DateTime, string>();
 
         private DataGridView dgv;
-        private readonly CalendarScheduleRepository scheduleRepository = new();
         private readonly CalendarDbRepository calendarDbRepository = new();
         private readonly int loggedInUserId;
         private readonly CalendarMonthCellRenderer monthCellRenderer =
@@ -637,48 +636,118 @@ namespace calendar4
         }
 
         private void DgvCalendar_CellDoubleClick(
-            object? sender,
-            DataGridViewCellEventArgs e)
+    object? sender,
+    DataGridViewCellEventArgs e)
         {
             if (e.RowIndex < 0 || e.ColumnIndex < 0)
                 return;
 
             var cell = dgv[e.ColumnIndex, e.RowIndex];
+
             if (cell.Tag is not DateTime selectedDate)
                 return;
 
             var keyDate = selectedDate.Date;
             currentDate = keyDate;
-            scheduleMap.TryGetValue(keyDate, out var currentSchedules);
+
+            scheduleMap.TryGetValue(
+                keyDate,
+                out var currentSchedules);
+
+            // DB에 있던 기존 일정 목록
+            var originalSchedules =
+                (currentSchedules ?? new List<CalendarScheduleEntry>())
+                .ToList();
 
             using var dialog = new CalendarScheduleListDialog(
                 keyDate,
-                currentSchedules ?? Enumerable.Empty<CalendarScheduleEntry>());
+                originalSchedules);
+
             if (dialog.ShowDialog(FindForm()) != DialogResult.OK)
                 return;
 
-            var updated = dialog.Schedules;
-            if (updated.Count == 0)
-                scheduleMap.Remove(keyDate);
-            else
-                scheduleMap[keyDate] = updated;
+            // 다이얼로그에서 최종적으로 만들어진 일정 목록
+            var updatedSchedules =
+                dialog.Schedules.ToList();
 
-            SaveSchedules();
-            UpdateView();
-            DateOrScheduleChanged?.Invoke(this, EventArgs.Empty);
-        }
-
-        public void SaveSchedules()
-        {
             try
             {
-                // 기존 로컬 저장
-                scheduleRepository.Save(scheduleMap);
+                // --------------------------------
+                // 1. 삭제된 일정 찾기
+                // --------------------------------
 
-                // DB 저장
-                calendarDbRepository.Save(
-                    loggedInUserId,
-                    scheduleMap);
+                foreach (var original in originalSchedules)
+                {
+                    if (original.CalId is null)
+                        continue;
+
+                    bool stillExists =
+                        updatedSchedules.Any(
+                            updated =>
+                                updated.CalId == original.CalId);
+
+                    if (!stillExists)
+                    {
+                        calendarDbRepository.Delete(
+                            loggedInUserId,
+                            original);
+                    }
+                }
+
+
+                // --------------------------------
+                // 2. 새로 추가된 일정
+                // --------------------------------
+
+                foreach (var schedule in updatedSchedules)
+                {
+                    if (schedule.CalId is null)
+                    {
+                        int newCalId =
+                            calendarDbRepository.Add(
+                                loggedInUserId,
+                                schedule,
+                                keyDate);
+
+                        // DB에서 생성된 cal_id를 객체에 저장
+                        schedule.CalId = newCalId;
+                    }
+                }
+
+
+                // --------------------------------
+                // 3. 기존 일정 수정
+                // --------------------------------
+
+                foreach (var schedule in updatedSchedules)
+                {
+                    if (schedule.CalId is not null)
+                    {
+                        calendarDbRepository.Update(
+                            loggedInUserId,
+                            schedule,
+                            keyDate);
+                    }
+                }
+
+
+                // --------------------------------
+                // 4. 메모리 일정도 최신 상태로 변경
+                // --------------------------------
+
+                if (updatedSchedules.Count == 0)
+                {
+                    scheduleMap.Remove(keyDate);
+                }
+                else
+                {
+                    scheduleMap[keyDate] = updatedSchedules;
+                }
+                UpdateView();
+
+                DateOrScheduleChanged?.Invoke(
+                    this,
+                    EventArgs.Empty);
             }
             catch (Exception ex)
             {
@@ -687,6 +756,10 @@ namespace calendar4
                     "DB 저장 오류",
                     MessageBoxButtons.OK,
                     MessageBoxIcon.Error);
+
+                // DB 기준으로 다시 불러오기
+                LoadSchedules();
+                UpdateView();
             }
         }
 
