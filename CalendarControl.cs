@@ -15,10 +15,6 @@ namespace calendar4
             new Dictionary<DateTime, string>();
 
         private DataGridView dgv;
-
-        private readonly CalendarScheduleRepository scheduleRepository = new();
-
-
         private readonly CalendarDbRepository calendarDbRepository = new();
         private readonly int loggedInUserId;
         private readonly CalendarMonthCellRenderer monthCellRenderer =
@@ -640,58 +636,19 @@ namespace calendar4
         }
 
         private void DgvCalendar_CellDoubleClick(
-
-            object? sender,
-            DataGridViewCellEventArgs e)
-
     object? sender,
     DataGridViewCellEventArgs e)
-
         {
             if (e.RowIndex < 0 || e.ColumnIndex < 0)
                 return;
 
             var cell = dgv[e.ColumnIndex, e.RowIndex];
 
-
-
             if (cell.Tag is not DateTime selectedDate)
                 return;
 
             var keyDate = selectedDate.Date;
             currentDate = keyDate;
-
-            scheduleMap.TryGetValue(keyDate, out var currentSchedules);
-
-            using var dialog = new CalendarScheduleListDialog(
-                keyDate,
-                currentSchedules ?? Enumerable.Empty<CalendarScheduleEntry>());
-            if (dialog.ShowDialog(FindForm()) != DialogResult.OK)
-                return;
-
-            var updated = dialog.Schedules;
-            if (updated.Count == 0)
-                scheduleMap.Remove(keyDate);
-            else
-                scheduleMap[keyDate] = updated;
-
-            SaveSchedules();
-            UpdateView();
-            DateOrScheduleChanged?.Invoke(this, EventArgs.Empty);
-        }
-
-        public void SaveSchedules()
-        {
-            try
-            {
-                // 기존 로컬 저장
-                scheduleRepository.Save(scheduleMap);
-
-                // DB 저장
-                calendarDbRepository.Save(
-                    loggedInUserId,
-                    scheduleMap);
-
 
             scheduleMap.TryGetValue(
                 keyDate,
@@ -791,7 +748,6 @@ namespace calendar4
                 DateOrScheduleChanged?.Invoke(
                     this,
                     EventArgs.Empty);
-
             }
             catch (Exception ex)
             {
@@ -801,11 +757,9 @@ namespace calendar4
                     MessageBoxButtons.OK,
                     MessageBoxIcon.Error);
 
-
                 // DB 기준으로 다시 불러오기
                 LoadSchedules();
                 UpdateView();
-
             }
         }
 
