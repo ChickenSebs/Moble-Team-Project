@@ -36,6 +36,7 @@
             chkRememberId = new CheckBox();
             btnLogin = new Button();
             btnSignup = new Button();
+            btnHello = new Button();
             SuspendLayout();
             // 
             // label1
@@ -115,12 +116,23 @@
             btnSignup.UseVisualStyleBackColor = true;
             btnSignup.Click += btnSignup_Click;
             // 
+            // btnHello
+            // 
+            btnHello.Location = new Point(560, 132);
+            btnHello.Name = "btnHello";
+            btnHello.Size = new Size(75, 23);
+            btnHello.TabIndex = 9;
+            btnHello.Text = "Hello";
+            btnHello.UseVisualStyleBackColor = true;
+            btnHello.Click += btnHello_Click;
+            // 
             // Login
             // 
             AcceptButton = btnLogin;
             AutoScaleDimensions = new SizeF(7F, 15F);
             AutoScaleMode = AutoScaleMode.Font;
             ClientSize = new Size(800, 450);
+            Controls.Add(btnHello);
             Controls.Add(btnSignup);
             Controls.Add(btnLogin);
             Controls.Add(chkRememberId);
@@ -147,5 +159,6 @@
         private CheckBox chkRememberId;
         private Button btnLogin;
         private Button btnSignup;
+        private Button btnHello;
     }
 }
