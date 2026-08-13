@@ -293,6 +293,10 @@ namespace calendar4
                     calCtrl.SetHolidayMap(holidayMap);
                     calCtrl.SetTargetDate(currentMonth);
                 }
+                else if (tab.Controls[0] is PlannerControl plannerCtrl)
+                {
+                    plannerCtrl.SetDate(currentMonth);
+                }
             }
 
             UpdateSummaryView();
@@ -577,7 +581,7 @@ namespace calendar4
             switch (type)
             {
                 case TabType.Diary:
-                    var diaryCtrl = new DiaryControl
+                    var diaryCtrl = new DiaryControl(loggedInUserId)
                     {
                         Dock = DockStyle.Fill
                     };
@@ -586,7 +590,7 @@ namespace calendar4
                     break;
 
                 case TabType.Planner:
-                    content = new PlannerControl
+                    content = new PlannerControl(loggedInUserId)
                     {
                         Dock = DockStyle.Fill
                     };

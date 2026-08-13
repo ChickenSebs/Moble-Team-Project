@@ -3,6 +3,9 @@ namespace calendar4;
 public sealed class ClassSchedule
 {
     public Guid Id { get; set; } = Guid.NewGuid();
+
+    public int? TimetableId { get; set; }
+
     public string SubjectName { get; set; } = string.Empty;
     public string Classroom { get; set; } = string.Empty;
     public DayOfWeek Day { get; set; }
