@@ -50,8 +50,7 @@ namespace tap
                     conn.Open();
 
                     // 아이디와 비밀번호가 일치하는 회원 정보 조회
-                    string selectQuery = "SELECT user_id, name FROM user WHERE login_id = @login_id AND pw = @pw";
-
+                    string selectQuery = "SELECT user_id, name, premium FROM user WHERE login_id = @login_id AND pw = @pw";
                     using (MySqlCommand cmd = new MySqlCommand(selectQuery, conn))
                     {
                         cmd.Parameters.AddWithValue("@login_id", loginId);
@@ -76,6 +75,10 @@ namespace tap
 
                                 int loggedInUserId = Convert.ToInt32(reader["user_id"]);
                                 string userName = reader["name"].ToString();
+                                int premiumValue = Convert.ToInt32(reader["premium"]);
+
+                                CurrentUser.UserId = loggedInUserId;
+                                CurrentUser.IsPremium = premiumValue == 1;
 
                                 MessageBox.Show($"{userName}님, 환영합니다!", "로그인 성공", MessageBoxButtons.OK, MessageBoxIcon.Information);
 

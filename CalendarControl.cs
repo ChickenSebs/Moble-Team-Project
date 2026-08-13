@@ -15,10 +15,6 @@ namespace calendar4
             new Dictionary<DateTime, string>();
 
         private DataGridView dgv;
-
-        private readonly CalendarScheduleRepository scheduleRepository = new();
-
-
         private readonly CalendarDbRepository calendarDbRepository = new();
         private readonly int loggedInUserId;
         private readonly CalendarMonthCellRenderer monthCellRenderer =
@@ -89,7 +85,38 @@ namespace calendar4
             dgv.CellPainting +=
                 DgvCalendar_CellPainting;
 
+            dgv.MouseEnter += (s, e) => dgv.Focus();
+            dgv.MouseWheel += DgvCalendar_MouseWheel;
+
             Controls.Add(dgv);
+        }
+
+        private void DgvCalendar_MouseWheel(
+            object? sender,
+            MouseEventArgs e)
+        {
+            int moveDirection = e.Delta > 0 ? -1 : 1;
+
+            switch (viewMode)
+            {
+                case CalendarViewMode.Month:
+                    currentDate = currentDate.AddMonths(moveDirection);
+                    break;
+
+                case CalendarViewMode.Week:
+                    currentDate = currentDate.AddDays(moveDirection * 7);
+                    break;
+
+                case CalendarViewMode.Day:
+                    currentDate = currentDate.AddDays(moveDirection);
+                    break;
+            }
+
+            UpdateView();
+
+            DateOrScheduleChanged?.Invoke(
+                this,
+                EventArgs.Empty);
         }
 
         public void SetViewMode(CalendarViewMode newMode)
@@ -259,12 +286,12 @@ namespace calendar4
                         out string holidayName);
 
                 cell.Style.ForeColor =
-                    col switch
-                    {
-                        0 => Color.Red,
-                        6 => Color.Blue,
-                        _ => Color.Black
-                    };
+                col switch
+                {
+                    0 => Color.Red,
+                    6 => Color.DeepSkyBlue,
+                    _ => UiThemeService.TextColor
+                };
 
                 string cellText = day.ToString();
 
@@ -386,8 +413,8 @@ namespace calendar4
                         : col switch
                         {
                             0 => Color.Red,
-                            6 => Color.Blue,
-                            _ => Color.Black
+                            6 => Color.DeepSkyBlue,
+                            _ => UiThemeService.TextColor
                         };
 
                 ApplyDateCellBackground(
@@ -436,7 +463,7 @@ namespace calendar4
                 DataGridViewContentAlignment.TopCenter;
 
             dgv.RowHeadersDefaultCellStyle.ForeColor =
-                Color.DimGray;
+                 UiThemeService.TextColor;
 
             dgv.RowHeadersDefaultCellStyle.Font =
                 new Font(
@@ -471,11 +498,8 @@ namespace calendar4
 
                 cell.Style.BackColor =
                     date.Date == DateTime.Today
-                    ? Color.FromArgb(
-                        242,
-                        248,
-                        255)
-                    : Color.White;
+                    ? UiThemeService.PrimaryColor
+                    : UiThemeService.InputColor;
 
                 if (isHoliday)
                     cell.Style.BackColor =
@@ -522,6 +546,7 @@ namespace calendar4
                             PersonalCategoryStores.Calendar.GetScheduleAccentColor(
                                 schedule.CategoryId,
                                 schedule.CustomColorArgb);
+
 
                         if (r == startRow)
                         {
@@ -584,7 +609,7 @@ namespace calendar4
             if (date.Date == DateTime.Today)
             {
                 cell.Style.BackColor =
-                    Color.LightSkyBlue;
+                    UiThemeService.PrimaryColor;
             }
             else if (isHoliday)
             {
@@ -601,7 +626,7 @@ namespace calendar4
             else
             {
                 cell.Style.BackColor =
-                    Color.White;
+                    UiThemeService.InputColor;
             }
         }
 
@@ -640,58 +665,19 @@ namespace calendar4
         }
 
         private void DgvCalendar_CellDoubleClick(
-
-            object? sender,
-            DataGridViewCellEventArgs e)
-
     object? sender,
     DataGridViewCellEventArgs e)
-
         {
             if (e.RowIndex < 0 || e.ColumnIndex < 0)
                 return;
 
             var cell = dgv[e.ColumnIndex, e.RowIndex];
 
-
-
             if (cell.Tag is not DateTime selectedDate)
                 return;
 
             var keyDate = selectedDate.Date;
             currentDate = keyDate;
-
-            scheduleMap.TryGetValue(keyDate, out var currentSchedules);
-
-            using var dialog = new CalendarScheduleListDialog(
-                keyDate,
-                currentSchedules ?? Enumerable.Empty<CalendarScheduleEntry>());
-            if (dialog.ShowDialog(FindForm()) != DialogResult.OK)
-                return;
-
-            var updated = dialog.Schedules;
-            if (updated.Count == 0)
-                scheduleMap.Remove(keyDate);
-            else
-                scheduleMap[keyDate] = updated;
-
-            SaveSchedules();
-            UpdateView();
-            DateOrScheduleChanged?.Invoke(this, EventArgs.Empty);
-        }
-
-        public void SaveSchedules()
-        {
-            try
-            {
-                // 기존 로컬 저장
-                scheduleRepository.Save(scheduleMap);
-
-                // DB 저장
-                calendarDbRepository.Save(
-                    loggedInUserId,
-                    scheduleMap);
-
 
             scheduleMap.TryGetValue(
                 keyDate,
@@ -791,7 +777,6 @@ namespace calendar4
                 DateOrScheduleChanged?.Invoke(
                     this,
                     EventArgs.Empty);
-
             }
             catch (Exception ex)
             {
@@ -801,11 +786,9 @@ namespace calendar4
                     MessageBoxButtons.OK,
                     MessageBoxIcon.Error);
 
-
                 // DB 기준으로 다시 불러오기
                 LoadSchedules();
                 UpdateView();
-
             }
         }
 
@@ -827,6 +810,71 @@ namespace calendar4
                 scheduleMap =
                     new Dictionary<DateTime, List<CalendarScheduleEntry>>();
             }
+        }
+        public void ApplyCurrentTheme()
+        {
+            // CalendarControl 자체 배경
+            BackColor = UiThemeService.BackgroundColor;
+            ForeColor = UiThemeService.TextColor;
+
+            // DataGridView 전체
+            dgv.BackgroundColor = UiThemeService.BackgroundColor;
+            dgv.GridColor = GetThemeBorderColor();
+            dgv.BorderStyle = BorderStyle.None;
+
+            // 일반 날짜 셀
+            dgv.DefaultCellStyle.BackColor = UiThemeService.InputColor;
+            dgv.DefaultCellStyle.ForeColor = UiThemeService.TextColor;
+            dgv.DefaultCellStyle.SelectionBackColor = UiThemeService.PrimaryColor;
+            dgv.DefaultCellStyle.SelectionForeColor = UiThemeService.TextColor;
+
+            // 요일 헤더
+            dgv.ColumnHeadersDefaultCellStyle.BackColor =
+                UiThemeService.SurfaceColor;
+
+            dgv.ColumnHeadersDefaultCellStyle.ForeColor =
+                UiThemeService.TextColor;
+
+            dgv.ColumnHeadersDefaultCellStyle.SelectionBackColor =
+                UiThemeService.SurfaceColor;
+
+            dgv.ColumnHeadersDefaultCellStyle.SelectionForeColor =
+                UiThemeService.TextColor;
+
+            // 일간 보기의 시간 헤더
+            dgv.RowHeadersDefaultCellStyle.BackColor =
+                UiThemeService.SurfaceColor;
+
+            dgv.RowHeadersDefaultCellStyle.ForeColor =
+                UiThemeService.TextColor;
+
+            // 현재 화면 다시 그림
+            UpdateView();
+
+            dgv.Invalidate();
+        }
+        private Color GetThemeBorderColor()
+        {
+            return UiThemeService.CurrentTheme switch
+            {
+                AppTheme.Dark =>
+                    Color.FromArgb(75, 75, 75),
+
+                AppTheme.Blossom =>
+                    Color.FromArgb(243, 198, 212),
+
+                AppTheme.Mint =>
+                    Color.FromArgb(190, 225, 213),
+
+                AppTheme.Lavender =>
+                    Color.FromArgb(210, 198, 235),
+
+                AppTheme.Cozy =>
+                    Color.FromArgb(220, 202, 180),
+
+                _ =>
+                    Color.FromArgb(210, 210, 210)
+            };
         }
     }
 

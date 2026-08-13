@@ -44,8 +44,12 @@
             tabPage1 = new TabPage();
             tabPage2 = new TabPage();
             tabPage3 = new TabPage();
+            lblPremiumStatus = new Label();
+            btnPremium = new Button();
             groupBox1.SuspendLayout();
             tabControl1.SuspendLayout();
+            tabPage1.SuspendLayout();
+            tabPage2.SuspendLayout();
             SuspendLayout();
             // 
             // label1
@@ -97,7 +101,7 @@
             groupBox1.Controls.Add(label3);
             groupBox1.Controls.Add(label5);
             groupBox1.Controls.Add(label4);
-            groupBox1.Location = new Point(708, 150);
+            groupBox1.Location = new Point(108, 73);
             groupBox1.Name = "groupBox1";
             groupBox1.Size = new Size(342, 316);
             groupBox1.TabIndex = 2;
@@ -112,7 +116,6 @@
             button4.TabIndex = 3;
             button4.Text = "회원탈퇴";
             button4.UseVisualStyleBackColor = true;
-            button4.Click += button4_Click;
             // 
             // btnRe
             // 
@@ -174,6 +177,8 @@
             // 
             // tabPage1
             // 
+            tabPage1.Controls.Add(btnPremium);
+            tabPage1.Controls.Add(lblPremiumStatus);
             tabPage1.Location = new Point(4, 24);
             tabPage1.Name = "tabPage1";
             tabPage1.Padding = new Padding(3);
@@ -184,6 +189,7 @@
             // 
             // tabPage2
             // 
+            tabPage2.Controls.Add(groupBox1);
             tabPage2.Location = new Point(4, 24);
             tabPage2.Name = "tabPage2";
             tabPage2.Padding = new Padding(3);
@@ -202,20 +208,42 @@
             tabPage3.Text = "tabPage3";
             tabPage3.UseVisualStyleBackColor = true;
             // 
+            // lblPremiumStatus
+            // 
+            lblPremiumStatus.AutoSize = true;
+            lblPremiumStatus.Location = new Point(147, 139);
+            lblPremiumStatus.Name = "lblPremiumStatus";
+            lblPremiumStatus.Size = new Size(71, 15);
+            lblPremiumStatus.TabIndex = 0;
+            lblPremiumStatus.Text = "일반 사용자";
+            // 
+            // btnPremium
+            // 
+            btnPremium.Location = new Point(168, 212);
+            btnPremium.Name = "btnPremium";
+            btnPremium.Size = new Size(75, 23);
+            btnPremium.TabIndex = 1;
+            btnPremium.Text = "프리미엄";
+            btnPremium.UseVisualStyleBackColor = true;
+            btnPremium.Click += btnPremium_Click;
+            // 
             // Mypage
             // 
             AutoScaleDimensions = new SizeF(7F, 15F);
             AutoScaleMode = AutoScaleMode.Font;
             ClientSize = new Size(1077, 603);
-            Controls.Add(groupBox1);
             Controls.Add(tabControl1);
             Controls.Add(label1);
             Name = "Mypage";
             StartPosition = FormStartPosition.CenterScreen;
             Text = "Mypage";
+            FormClosed += Mypage_FormClosed;
             groupBox1.ResumeLayout(false);
             groupBox1.PerformLayout();
             tabControl1.ResumeLayout(false);
+            tabPage1.ResumeLayout(false);
+            tabPage1.PerformLayout();
+            tabPage2.ResumeLayout(false);
             ResumeLayout(false);
             PerformLayout();
         }
@@ -241,5 +269,7 @@
         private Button btnRe;
         private TextBox txtPw;
         private Label label6;
+        private Button btnPremium;
+        private Label lblPremiumStatus;
     }
 }

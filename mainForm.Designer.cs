@@ -73,23 +73,21 @@
             // tool_font
             // 
             tool_font.Name = "tool_font";
-            tool_font.Size = new Size(126, 22);
+            tool_font.Size = new Size(180, 22);
             tool_font.Text = "폰트";
-            tool_font.Click += tool_font_Click;
             // 
             // tool_theme
             // 
             tool_theme.Name = "tool_theme";
-            tool_theme.Size = new Size(126, 22);
+            tool_theme.Size = new Size(180, 22);
             tool_theme.Text = "테마 변경";
             tool_theme.Click += tool_theme_Click;
             // 
             // tool_image
             // 
             tool_image.Name = "tool_image";
-            tool_image.Size = new Size(126, 22);
+            tool_image.Size = new Size(180, 22);
             tool_image.Text = "이미지";
-            tool_image.Click += tool_image_Click;
             // 
             // tool_con
             // 
