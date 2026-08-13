@@ -114,11 +114,14 @@ namespace calendar4
         {
             alarmManager?.Dispose();
             SaveTabs();
+
             
             if(!isSwitchingForm)
             {
                 Environment.Exit(0);
             }
+
+
         }
 
         private void InitUIStyleEvents()
