@@ -247,5 +247,70 @@ namespace calendar4.Services
 
             return scheduleMap;
         }
+        public Dictionary<DateTime, string> LoadDdays(int userId)
+        {
+            var ddayMap = new Dictionary<DateTime, string>();
+
+            using var connection = dbConnection.GetConnection();
+            connection.Open();
+
+            const string sql = @"
+        SELECT date, content
+        FROM user_dday
+        WHERE user_id = @user_id
+        ORDER BY date";
+
+            using var command =
+                new MySqlCommand(sql, connection);
+
+            command.Parameters.AddWithValue(
+                "@user_id",
+                userId);
+
+            using var reader =
+                command.ExecuteReader();
+
+            while (reader.Read())
+            {
+                DateTime date =
+                    reader.GetDateTime("date");
+
+                string content =
+                    reader.GetString("content");
+
+                ddayMap[date.Date] =
+                    content;
+            }
+
+            return ddayMap;
+        }
+
+        public void DeleteDday(
+            int userId,
+            DateTime date)
+        {
+            using var connection =
+                dbConnection.GetConnection();
+
+            connection.Open();
+
+            const string sql = @"
+        DELETE FROM user_dday
+        WHERE user_id = @user_id
+          AND date = @date";
+
+            using var command =
+                new MySqlCommand(sql, connection);
+
+            command.Parameters.AddWithValue(
+                "@user_id",
+                userId);
+
+            command.Parameters.AddWithValue(
+                "@date",
+                date.Date);
+
+            command.ExecuteNonQuery();
+        }
     }
 }

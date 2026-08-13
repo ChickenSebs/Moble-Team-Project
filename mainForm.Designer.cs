@@ -32,7 +32,13 @@
             tool_back = new ToolStripMenuItem();
             tool_font = new ToolStripMenuItem();
             tool_theme = new ToolStripMenuItem();
-            tool_image = new ToolStripMenuItem();
+            menuThemeLight = new ToolStripMenuItem();
+            menuThemeDark = new ToolStripMenuItem();
+            toolStripSeparator2 = new ToolStripSeparator();
+            menuThemeBlossom = new ToolStripMenuItem();
+            menuThemeMint = new ToolStripMenuItem();
+            menuThemeLavender = new ToolStripMenuItem();
+            menuThemeCozy = new ToolStripMenuItem();
             tool_con = new ToolStripMenuItem();
             tool_month = new ToolStripMenuItem();
             tool_week = new ToolStripMenuItem();
@@ -48,6 +54,8 @@
             btn_exit = new Button();
             btn_search = new Button();
             btnMy = new Button();
+            lbDday = new Label();
+            btn_Dday = new Button();
             menuStrip1.SuspendLayout();
             tabPage1.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)dgvCalendar).BeginInit();
@@ -59,13 +67,13 @@
             menuStrip1.Items.AddRange(new ToolStripItem[] { tool_back, tool_con });
             menuStrip1.Location = new Point(0, 0);
             menuStrip1.Name = "menuStrip1";
-            menuStrip1.Size = new Size(1077, 24);
+            menuStrip1.Size = new Size(1315, 24);
             menuStrip1.TabIndex = 0;
             menuStrip1.Text = "menuStrip1";
             // 
             // tool_back
             // 
-            tool_back.DropDownItems.AddRange(new ToolStripItem[] { tool_font, tool_theme, tool_image });
+            tool_back.DropDownItems.AddRange(new ToolStripItem[] { tool_font, tool_theme });
             tool_back.Name = "tool_back";
             tool_back.Size = new Size(43, 20);
             tool_back.Text = "테마";
@@ -75,21 +83,60 @@
             tool_font.Name = "tool_font";
             tool_font.Size = new Size(126, 22);
             tool_font.Text = "폰트";
-            tool_font.Click += tool_font_Click;
             // 
             // tool_theme
             // 
+            tool_theme.DropDownItems.AddRange(new ToolStripItem[] { menuThemeLight, menuThemeDark, toolStripSeparator2, menuThemeBlossom, menuThemeMint, menuThemeLavender, menuThemeCozy });
             tool_theme.Name = "tool_theme";
             tool_theme.Size = new Size(126, 22);
             tool_theme.Text = "테마 변경";
-            tool_theme.Click += tool_theme_Click;
             // 
-            // tool_image
+            // menuThemeLight
             // 
-            tool_image.Name = "tool_image";
-            tool_image.Size = new Size(126, 22);
-            tool_image.Text = "이미지";
-            tool_image.Click += tool_image_Click;
+            menuThemeLight.Name = "menuThemeLight";
+            menuThemeLight.Size = new Size(126, 22);
+            menuThemeLight.Text = "라이트";
+            menuThemeLight.Click += menuThemeLight_Click;
+            // 
+            // menuThemeDark
+            // 
+            menuThemeDark.Name = "menuThemeDark";
+            menuThemeDark.Size = new Size(126, 22);
+            menuThemeDark.Text = "다크";
+            menuThemeDark.Click += menuThemeDark_Click;
+            // 
+            // toolStripSeparator2
+            // 
+            toolStripSeparator2.Name = "toolStripSeparator2";
+            toolStripSeparator2.Size = new Size(123, 6);
+            // 
+            // menuThemeBlossom
+            // 
+            menuThemeBlossom.Name = "menuThemeBlossom";
+            menuThemeBlossom.Size = new Size(126, 22);
+            menuThemeBlossom.Text = "🌸 블라썸";
+            menuThemeBlossom.Click += menuThemeBlossom_Click;
+            // 
+            // menuThemeMint
+            // 
+            menuThemeMint.Name = "menuThemeMint";
+            menuThemeMint.Size = new Size(126, 22);
+            menuThemeMint.Text = "🍀 민트";
+            menuThemeMint.Click += menuThemeMint_Click;
+            // 
+            // menuThemeLavender
+            // 
+            menuThemeLavender.Name = "menuThemeLavender";
+            menuThemeLavender.Size = new Size(126, 22);
+            menuThemeLavender.Text = "☁ 라벤더";
+            menuThemeLavender.Click += menuThemeLavender_Click;
+            // 
+            // menuThemeCozy
+            // 
+            menuThemeCozy.Name = "menuThemeCozy";
+            menuThemeCozy.Size = new Size(126, 22);
+            menuThemeCozy.Text = "\U0001f9f8 코지";
+            menuThemeCozy.Click += menuThemeCozy_Click;
             // 
             // tool_con
             // 
@@ -201,6 +248,7 @@
             btn_search.TabIndex = 5;
             btn_search.Text = "검색";
             btn_search.UseVisualStyleBackColor = true;
+            btn_search.Click += btn_search_Click;
             // 
             // btnMy
             // 
@@ -212,11 +260,33 @@
             btnMy.UseVisualStyleBackColor = true;
             btnMy.Click += btnMy_Click;
             // 
+            // lbDday
+            // 
+            lbDday.AutoSize = true;
+            lbDday.Font = new Font("맑은 고딕", 12F, FontStyle.Bold, GraphicsUnit.Point);
+            lbDday.Location = new Point(1091, 45);
+            lbDday.Name = "lbDday";
+            lbDday.Size = new Size(121, 21);
+            lbDday.TabIndex = 8;
+            lbDday.Text = "[ D-Day 없음 ]";
+            // 
+            // btn_Dday
+            // 
+            btn_Dday.Location = new Point(1228, 42);
+            btn_Dday.Name = "btn_Dday";
+            btn_Dday.Size = new Size(75, 30);
+            btn_Dday.TabIndex = 9;
+            btn_Dday.Text = "설정";
+            btn_Dday.UseVisualStyleBackColor = true;
+            btn_Dday.Click += btn_Dday_Click;
+            // 
             // mainForm
             // 
             AutoScaleDimensions = new SizeF(7F, 15F);
             AutoScaleMode = AutoScaleMode.Font;
-            ClientSize = new Size(1077, 603);
+            ClientSize = new Size(1315, 603);
+            Controls.Add(btn_Dday);
+            Controls.Add(lbDday);
             Controls.Add(lbmain_title);
             Controls.Add(tb_search);
             Controls.Add(btn_search);
@@ -261,7 +331,15 @@
         private Button btn_exit;
         private Button btn_search;
         private ToolStripMenuItem tool_day;
-        private ToolStripMenuItem tool_image;
         private Button btnMy;
+        private ToolStripMenuItem menuThemeLight;
+        private ToolStripMenuItem menuThemeDark;
+        private ToolStripSeparator toolStripSeparator2;
+        private ToolStripMenuItem menuThemeBlossom;
+        private ToolStripMenuItem menuThemeMint;
+        private ToolStripMenuItem menuThemeLavender;
+        private ToolStripMenuItem menuThemeCozy;
+        private Label lbDday;
+        private Button btn_Dday;
     }
 }

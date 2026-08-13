@@ -1,4 +1,4 @@
-﻿
+﻿using calendar4.Services;
 using System;
 using System.Collections.Generic;
 using System.Drawing;
@@ -22,6 +22,8 @@ namespace calendar4
 
         private Dictionary<DateTime, List<CalendarScheduleEntry>> scheduleMap =
             new Dictionary<DateTime, List<CalendarScheduleEntry>>();
+        private Dictionary<DateTime, string> ddayMap =
+            new Dictionary<DateTime, string>();
 
         private DateTime currentDate = DateTime.Now;
         private CalendarViewMode viewMode =
@@ -286,12 +288,12 @@ namespace calendar4
                         out string holidayName);
 
                 cell.Style.ForeColor =
-                    col switch
-                    {
-                        0 => Color.Red,
-                        6 => Color.Blue,
-                        _ => Color.Black
-                    };
+                col switch
+                {
+                    0 => Color.Red,
+                    6 => Color.DeepSkyBlue,
+                    _ => UiThemeService.TextColor
+                };
 
                 string cellText = day.ToString();
 
@@ -413,8 +415,8 @@ namespace calendar4
                         : col switch
                         {
                             0 => Color.Red,
-                            6 => Color.Blue,
-                            _ => Color.Black
+                            6 => Color.DeepSkyBlue,
+                            _ => UiThemeService.TextColor
                         };
 
                 ApplyDateCellBackground(
@@ -463,7 +465,7 @@ namespace calendar4
                 DataGridViewContentAlignment.TopCenter;
 
             dgv.RowHeadersDefaultCellStyle.ForeColor =
-                Color.DimGray;
+                 UiThemeService.TextColor;
 
             dgv.RowHeadersDefaultCellStyle.Font =
                 new Font(
@@ -498,11 +500,8 @@ namespace calendar4
 
                 cell.Style.BackColor =
                     date.Date == DateTime.Today
-                    ? Color.FromArgb(
-                        242,
-                        248,
-                        255)
-                    : Color.White;
+                    ? UiThemeService.PrimaryColor
+                    : UiThemeService.InputColor;
 
                 if (isHoliday)
                     cell.Style.BackColor =
@@ -549,6 +548,7 @@ namespace calendar4
                             PersonalCategoryStores.Calendar.GetScheduleAccentColor(
                                 schedule.CategoryId,
                                 schedule.CustomColorArgb);
+
 
                         if (r == startRow)
                         {
@@ -611,7 +611,7 @@ namespace calendar4
             if (date.Date == DateTime.Today)
             {
                 cell.Style.BackColor =
-                    Color.LightSkyBlue;
+                    UiThemeService.PrimaryColor;
             }
             else if (isHoliday)
             {
@@ -628,7 +628,7 @@ namespace calendar4
             else
             {
                 cell.Style.BackColor =
-                    Color.White;
+                    UiThemeService.InputColor;
             }
         }
 
@@ -650,15 +650,30 @@ namespace calendar4
 
             holidayMap.TryGetValue(date.Date, out var holidayName);
             scheduleMap.TryGetValue(date.Date, out var schedules);
+            ddayMap.TryGetValue(date.Date,out var ddayText);
+
+            var displaySchedules =
+                schedules is null
+                    ? new List<CalendarScheduleEntry>()
+                    : schedules.ToList();
+
+            if (!string.IsNullOrWhiteSpace(ddayText))
+            {
+                displaySchedules.Add(
+                    new CalendarScheduleEntry
+                    {
+                        Text = $"D-day {ddayText}",
+                        StartHour = 8,
+                        EndHour = 9
+                    });
+            }
 
             monthCellRenderer.Draw(
                 e.Graphics,
                 e.CellBounds,
                 date,
                 holidayName,
-                schedules is null
-                    ? Array.Empty<CalendarScheduleEntry>()
-                    : schedules,
+                displaySchedules,
                 e.CellStyle.Font ?? dgv.Font,
                 e.CellStyle.ForeColor,
                 (e.State & DataGridViewElementStates.Selected) != 0);
@@ -666,9 +681,7 @@ namespace calendar4
             e.Handled = true;
         }
 
-        private void DgvCalendar_CellDoubleClick(
-    object? sender,
-    DataGridViewCellEventArgs e)
+        private void DgvCalendar_CellDoubleClick(object? sender,DataGridViewCellEventArgs e)
         {
             if (e.RowIndex < 0 || e.ColumnIndex < 0)
                 return;
@@ -722,6 +735,17 @@ namespace calendar4
                         calendarDbRepository.Delete(
                             loggedInUserId,
                             original);
+                        if (ddayMap.TryGetValue(
+                            keyDate,
+                            out var ddayTitle) &&
+                            ddayTitle == original.Text)
+                        {
+                            calendarDbRepository.DeleteDday(
+                                loggedInUserId,
+                                keyDate);
+
+                            ddayMap.Remove(keyDate);
+                        }
                     }
                 }
 
@@ -800,6 +824,8 @@ namespace calendar4
             {
                 scheduleMap =
                     calendarDbRepository.Load(loggedInUserId);
+                ddayMap =
+                    calendarDbRepository.LoadDdays(loggedInUserId);
             }
             catch (Exception ex)
             {
@@ -811,7 +837,74 @@ namespace calendar4
 
                 scheduleMap =
                     new Dictionary<DateTime, List<CalendarScheduleEntry>>();
+                ddayMap =
+                    new Dictionary<DateTime, string>();
             }
+        }
+        public void ApplyCurrentTheme()
+        {
+            // CalendarControl 자체 배경
+            BackColor = UiThemeService.BackgroundColor;
+            ForeColor = UiThemeService.TextColor;
+
+            // DataGridView 전체
+            dgv.BackgroundColor = UiThemeService.BackgroundColor;
+            dgv.GridColor = GetThemeBorderColor();
+            dgv.BorderStyle = BorderStyle.None;
+
+            // 일반 날짜 셀
+            dgv.DefaultCellStyle.BackColor = UiThemeService.InputColor;
+            dgv.DefaultCellStyle.ForeColor = UiThemeService.TextColor;
+            dgv.DefaultCellStyle.SelectionBackColor = UiThemeService.PrimaryColor;
+            dgv.DefaultCellStyle.SelectionForeColor = UiThemeService.TextColor;
+
+            // 요일 헤더
+            dgv.ColumnHeadersDefaultCellStyle.BackColor =
+                UiThemeService.SurfaceColor;
+
+            dgv.ColumnHeadersDefaultCellStyle.ForeColor =
+                UiThemeService.TextColor;
+
+            dgv.ColumnHeadersDefaultCellStyle.SelectionBackColor =
+                UiThemeService.SurfaceColor;
+
+            dgv.ColumnHeadersDefaultCellStyle.SelectionForeColor =
+                UiThemeService.TextColor;
+
+            // 일간 보기의 시간 헤더
+            dgv.RowHeadersDefaultCellStyle.BackColor =
+                UiThemeService.SurfaceColor;
+
+            dgv.RowHeadersDefaultCellStyle.ForeColor =
+                UiThemeService.TextColor;
+
+            // 현재 화면 다시 그림
+            UpdateView();
+
+            dgv.Invalidate();
+        }
+        private Color GetThemeBorderColor()
+        {
+            return UiThemeService.CurrentTheme switch
+            {
+                AppTheme.Dark =>
+                    Color.FromArgb(75, 75, 75),
+
+                AppTheme.Blossom =>
+                    Color.FromArgb(243, 198, 212),
+
+                AppTheme.Mint =>
+                    Color.FromArgb(190, 225, 213),
+
+                AppTheme.Lavender =>
+                    Color.FromArgb(210, 198, 235),
+
+                AppTheme.Cozy =>
+                    Color.FromArgb(220, 202, 180),
+
+                _ =>
+                    Color.FromArgb(210, 210, 210)
+            };
         }
     }
 
