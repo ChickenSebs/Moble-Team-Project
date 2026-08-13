@@ -25,6 +25,7 @@ namespace calendar4
         private CalendarControl.CalendarViewMode viewMode = CalendarControl.CalendarViewMode.Month;
 
         public event EventHandler DataChanged;
+        public event EventHandler DateOrScheduleChanged;
 
         public DiaryControl(int userId)
         {
@@ -56,10 +57,47 @@ namespace calendar4
 
             dgv.Resize += (s, ev) => AdjustRowHeights();
             dgv.CellDoubleClick += DgvDiary_CellDoubleClick;
+            dgv.MouseEnter += (s, e) => dgv.Focus();
+            dgv.MouseWheel += DgvDiary_MouseWheel;
 
             Controls.Add(dgv);
 
             Load += DiaryControl_Load;
+        }
+
+        private void DgvDiary_MouseWheel(
+            object? sender,
+            MouseEventArgs e)
+        {
+            int moveDirection = e.Delta > 0 ? -1 : 1;
+
+            switch (viewMode)
+            {
+                case CalendarControl.CalendarViewMode.Month:
+                    currentDate =
+                        currentDate.AddMonths(moveDirection);
+                    break;
+
+                case CalendarControl.CalendarViewMode.Week:
+                    currentDate =
+                        currentDate.AddDays(moveDirection * 7);
+                    break;
+
+                case CalendarControl.CalendarViewMode.Day:
+                    currentDate =
+                        currentDate.AddDays(moveDirection);
+                    break;
+            }
+
+            UpdateView();
+
+            _ = LoadHolidaysAsync(
+                currentDate.Year,
+                currentDate.Month);
+
+            DateOrScheduleChanged?.Invoke(
+                this,
+                EventArgs.Empty);
         }
 
         private async void DiaryControl_Load(object sender, EventArgs e)
@@ -72,6 +110,11 @@ namespace calendar4
             currentDate = date;
             UpdateView();
             _ = LoadHolidaysAsync(currentDate.Year, currentDate.Month);
+        }
+
+        public DateTime GetTargetDate()
+        {
+            return currentDate;
         }
 
         public void SetViewMode(CalendarControl.CalendarViewMode newMode)

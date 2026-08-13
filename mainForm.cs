@@ -585,7 +585,20 @@ namespace calendar4
                     {
                         Dock = DockStyle.Fill
                     };
-                    diaryCtrl.DataChanged += (s, ev) => UpdateSummaryView();
+
+                    diaryCtrl.DataChanged +=
+                        (s, ev) => UpdateSummaryView();
+
+                    diaryCtrl.DateOrScheduleChanged +=
+                        (s, ev) =>
+                        {
+                            currentMonth =
+                                diaryCtrl.GetTargetDate();
+
+                            SyncSmallCalendar();
+                            RefreshAllViews();
+                        };
+
                     content = diaryCtrl;
                     break;
 

@@ -85,7 +85,38 @@ namespace calendar4
             dgv.CellPainting +=
                 DgvCalendar_CellPainting;
 
+            dgv.MouseEnter += (s, e) => dgv.Focus();
+            dgv.MouseWheel += DgvCalendar_MouseWheel;
+
             Controls.Add(dgv);
+        }
+
+        private void DgvCalendar_MouseWheel(
+            object? sender,
+            MouseEventArgs e)
+        {
+            int moveDirection = e.Delta > 0 ? -1 : 1;
+
+            switch (viewMode)
+            {
+                case CalendarViewMode.Month:
+                    currentDate = currentDate.AddMonths(moveDirection);
+                    break;
+
+                case CalendarViewMode.Week:
+                    currentDate = currentDate.AddDays(moveDirection * 7);
+                    break;
+
+                case CalendarViewMode.Day:
+                    currentDate = currentDate.AddDays(moveDirection);
+                    break;
+            }
+
+            UpdateView();
+
+            DateOrScheduleChanged?.Invoke(
+                this,
+                EventArgs.Empty);
         }
 
         public void SetViewMode(CalendarViewMode newMode)
