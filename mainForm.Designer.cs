@@ -47,6 +47,7 @@
             tabControl1 = new TabControl();
             btn_exit = new Button();
             btn_search = new Button();
+            btnMy = new Button();
             menuStrip1.SuspendLayout();
             tabPage1.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)dgvCalendar).BeginInit();
@@ -72,21 +73,21 @@
             // tool_font
             // 
             tool_font.Name = "tool_font";
-            tool_font.Size = new Size(180, 22);
+            tool_font.Size = new Size(126, 22);
             tool_font.Text = "폰트";
             tool_font.Click += tool_font_Click;
             // 
             // tool_theme
             // 
             tool_theme.Name = "tool_theme";
-            tool_theme.Size = new Size(180, 22);
+            tool_theme.Size = new Size(126, 22);
             tool_theme.Text = "테마 변경";
             tool_theme.Click += tool_theme_Click;
             // 
             // tool_image
             // 
             tool_image.Name = "tool_image";
-            tool_image.Size = new Size(180, 22);
+            tool_image.Size = new Size(126, 22);
             tool_image.Text = "이미지";
             tool_image.Click += tool_image_Click;
             // 
@@ -101,21 +102,21 @@
             // 
             tool_month.Name = "tool_month";
             tool_month.ShortcutKeys = Keys.Control | Keys.M;
-            tool_month.Size = new Size(180, 22);
+            tool_month.Size = new Size(131, 22);
             tool_month.Text = "월";
             // 
             // tool_week
             // 
             tool_week.Name = "tool_week";
             tool_week.ShortcutKeys = Keys.Control | Keys.W;
-            tool_week.Size = new Size(180, 22);
+            tool_week.Size = new Size(131, 22);
             tool_week.Text = "주";
             // 
             // tool_day
             // 
             tool_day.Name = "tool_day";
             tool_day.ShortcutKeys = Keys.Control | Keys.D;
-            tool_day.Size = new Size(180, 22);
+            tool_day.Size = new Size(131, 22);
             tool_day.Text = "일";
             // 
             // monthCalendar1
@@ -184,12 +185,13 @@
             // 
             // btn_exit
             // 
-            btn_exit.Location = new Point(9, 27);
+            btn_exit.Location = new Point(134, 27);
             btn_exit.Name = "btn_exit";
             btn_exit.Size = new Size(95, 32);
             btn_exit.TabIndex = 4;
             btn_exit.Text = "로그아웃";
             btn_exit.UseVisualStyleBackColor = true;
+            btn_exit.Click += btn_exit_Click;
             // 
             // btn_search
             // 
@@ -199,6 +201,18 @@
             btn_search.TabIndex = 5;
             btn_search.Text = "검색";
             btn_search.UseVisualStyleBackColor = true;
+            btn_search.Click += btn_search_Click;
+            tb_search.KeyDown += tb_search_KeyDown;
+            // 
+            // btnMy
+            // 
+            btnMy.Location = new Point(12, 27);
+            btnMy.Name = "btnMy";
+            btnMy.Size = new Size(95, 32);
+            btnMy.TabIndex = 4;
+            btnMy.Text = "마이페이지";
+            btnMy.UseVisualStyleBackColor = true;
+            btnMy.Click += btnMy_Click;
             // 
             // mainForm
             // 
@@ -208,6 +222,7 @@
             Controls.Add(lbmain_title);
             Controls.Add(tb_search);
             Controls.Add(btn_search);
+            Controls.Add(btnMy);
             Controls.Add(btn_exit);
             Controls.Add(tabControl1);
             Controls.Add(richTextBox1);
@@ -215,6 +230,7 @@
             Controls.Add(menuStrip1);
             MainMenuStrip = menuStrip1;
             Name = "mainForm";
+            StartPosition = FormStartPosition.CenterScreen;
             Text = "캘린더";
             FormClosing += mainForm_FormClosing;
             Load += mainForm_Load;
@@ -248,5 +264,6 @@
         private Button btn_search;
         private ToolStripMenuItem tool_day;
         private ToolStripMenuItem tool_image;
+        private Button btnMy;
     }
 }

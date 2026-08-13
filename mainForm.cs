@@ -1,12 +1,15 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Drawing;
+using System.Globalization;
 using System.IO;
+using System.Linq;
 using System.Net.Http;
 using System.Text.Json;
+using System.Threading.Tasks;
 using System.Windows.Forms;
 using System.Xml.Linq;
-using System.Globalization;
+using tap;
 
 namespace calendar4
 {
@@ -26,6 +29,8 @@ namespace calendar4
         private DateTime currentMonth = DateTime.Now;
 
         private Dictionary<DateTime, string> holidayMap = new Dictionary<DateTime, string>();
+
+        private bool isSwitchingForm = false;
 
         public enum TabType
         {
@@ -65,13 +70,16 @@ namespace calendar4
 
             InitSmallCalendarEvent();
             LoadTabs();
+
             alarmManager = new AlarmManager(tabControl1);
             alarmManager.Start();
             SyncSmallCalendar();
 
-            await LoadHolidaysAsync(currentMonth.Year, currentMonth.Month);
-
+            // 1. 먼저 공휴일 없이 빠르게 뷰를 띄웁니다.
             RefreshAllViews();
+
+            // 2. 공휴일 정보는 백그라운드에서 비동기로 가져온 뒤 캘린더만 갱신시킵니다.
+            await LoadHolidaysAsync(currentMonth.Year, currentMonth.Month);
         }
 
         private async Task LoadHolidaysAsync(int year, int month)
@@ -95,8 +103,7 @@ namespace calendar4
         {
             foreach (TabPage tab in tabControl1.TabPages)
             {
-                if (tab.Controls.Count > 0 &&
-                    tab.Controls[0] is CalendarControl calCtrl)
+                if (tab.Controls.Count > 0 && tab.Controls[0] is CalendarControl calCtrl)
                 {
                     calCtrl.SetHolidayMap(holidayMap);
                 }
@@ -107,6 +114,14 @@ namespace calendar4
         {
             alarmManager?.Dispose();
             SaveTabs();
+
+            
+            if(!isSwitchingForm)
+            {
+                Environment.Exit(0);
+            }
+
+
         }
 
         private void InitUIStyleEvents()
@@ -237,6 +252,7 @@ namespace calendar4
             }
         }
 
+        // [수정] 날짜 선택 시 현재 탭을 유지하면서 해당 날짜 정보만 갱신
         private async void MiniCal_DateChanged(object sender, DateRangeEventArgs e)
         {
             ApplyTabRename();
@@ -290,6 +306,10 @@ namespace calendar4
                     calCtrl.SetHolidayMap(holidayMap);
                     calCtrl.SetTargetDate(currentMonth);
                 }
+                else if (tab.Controls[0] is PlannerControl plannerCtrl)
+                {
+                    plannerCtrl.SetDate(currentMonth);
+                }
             }
 
             UpdateSummaryView();
@@ -312,16 +332,32 @@ namespace calendar4
                 return;
             }
 
-            var calendarControl = tabControl1.TabPages
-                .Cast<TabPage>()
-                .Where(tab => tab.Controls.Count > 0)
-                .Select(tab => tab.Controls[0])
-                .OfType<CalendarControl>()
-                .FirstOrDefault();
+            if (tabControl1.SelectedTab.Controls.Count > 0 &&
+                tabControl1.SelectedTab.Controls[0] is CalendarControl currentCalControl)
+            {
+                summaryBox.Text = summaryService.CreateCalendarSummary(currentCalControl.GetScheduleMap());
+                return;
+            }
 
-            summaryBox.Text = calendarControl is null
-                ? "📋 [전체 일정 요약]\n\n"
-                : summaryService.CreateCalendarSummary(calendarControl.GetScheduleMap());
+            CalendarControl? calendarControl = null;
+
+            foreach (TabPage tab in tabControl1.TabPages)
+            {
+                if (tab.Controls.Count > 0 && tab.Controls[0] is CalendarControl cal)
+                {
+                    calendarControl = cal;
+                    break;
+                }
+            }
+
+            if (calendarControl != null)
+            {
+                summaryBox.Text = summaryService.CreateCalendarSummary(calendarControl.GetScheduleMap());
+            }
+            else
+            {
+                summaryBox.Text = "📋 [전체 일정 요약]\n\n열려있는 캘린더가 없습니다.";
+            }
         }
 
         private void UpdateCalendarTitle()
@@ -334,31 +370,186 @@ namespace calendar4
                 GetSelectedViewMode());
         }
 
+        private void btn_search_Click(object sender, EventArgs e)
+        {
+            SearchActiveTab();
+        }
+
+        private void tb_search_KeyDown(object sender, KeyEventArgs e)
+        {
+            if (e.KeyCode != Keys.Enter)
+                return;
+
+            e.SuppressKeyPress = true;
+            SearchActiveTab();
+        }
+
+        private void SearchActiveTab()
+        {
+            string keyword = tb_search.Text.Trim();
+            if (string.IsNullOrWhiteSpace(keyword))
+            {
+                MessageBox.Show(
+                    "검색할 내용을 입력해주세요.",
+                    "검색",
+                    MessageBoxButtons.OK,
+                    MessageBoxIcon.Information);
+                tb_search.Focus();
+                return;
+            }
+
+            if (tabControl1.SelectedTab?.Controls.Count is not > 0)
+                return;
+
+            Control activeControl = tabControl1.SelectedTab.Controls[0];
+            List<SearchResultItem> results;
+            string searchScope;
+
+            if (activeControl is CalendarControl calendarControl)
+            {
+                searchScope = "개인 캘린더";
+                results = SearchCalendar(calendarControl, keyword);
+            }
+            else if (activeControl is DiaryControl diaryControl)
+            {
+                searchScope = "다이어리";
+                results = SearchDiary(diaryControl, keyword);
+            }
+            else
+            {
+                MessageBox.Show(
+                    "개인 캘린더 또는 다이어리 탭에서 검색해주세요.",
+                    "검색할 수 없는 탭",
+                    MessageBoxButtons.OK,
+                    MessageBoxIcon.Information);
+                return;
+            }
+
+            if (results.Count == 0)
+            {
+                MessageBox.Show(
+                    $"{searchScope}에서 ‘{keyword}’와 관련된 내용을 찾지 못했습니다.",
+                    "검색 결과 없음",
+                    MessageBoxButtons.OK,
+                    MessageBoxIcon.Information);
+                return;
+            }
+
+            using var dialog = new SearchResultsDialog(searchScope, keyword, results);
+            if (dialog.ShowDialog(this) != DialogResult.OK ||
+                dialog.SelectedResult is null)
+                return;
+
+            MoveToSearchResult(dialog.SelectedResult.Date);
+        }
+
+        private static List<SearchResultItem> SearchCalendar(
+            CalendarControl calendarControl,
+            string keyword)
+        {
+            return calendarControl.GetScheduleMap()
+                .SelectMany(pair => pair.Value.Select(schedule => new
+                {
+                    Date = pair.Key.Date,
+                    Schedule = schedule
+                }))
+                .Where(item => item.Schedule.Text.Contains(
+                    keyword,
+                    StringComparison.OrdinalIgnoreCase))
+                .OrderBy(item => item.Date)
+                .ThenBy(item => item.Schedule.StartHour)
+                .Select(item => new SearchResultItem(
+                    item.Date,
+                    item.Schedule.Text,
+                    $"{item.Date:yyyy년 M월 d일}  " +
+                    $"{item.Schedule.StartHour:00}:00~{item.Schedule.EndHour:00}:00"))
+                .ToList();
+        }
+
+        private static List<SearchResultItem> SearchDiary(
+            DiaryControl diaryControl,
+            string keyword)
+        {
+            return diaryControl.GetDiaryMap()
+                .Select(pair => new
+                {
+                    Date = DateTime.TryParse(pair.Key, out DateTime date)
+                        ? date.Date
+                        : DateTime.MinValue,
+                    Diary = pair.Value
+                })
+                .Where(item => item.Date != DateTime.MinValue &&
+                    (item.Diary.Title.Contains(
+                        keyword,
+                        StringComparison.OrdinalIgnoreCase) ||
+                     item.Diary.Content.Contains(
+                        keyword,
+                        StringComparison.OrdinalIgnoreCase)))
+                .OrderBy(item => item.Date)
+                .Select(item => new SearchResultItem(
+                    item.Date,
+                    string.IsNullOrWhiteSpace(item.Diary.Title)
+                        ? "[제목 없음]"
+                        : item.Diary.Title,
+                    $"{item.Date:yyyy년 M월 d일}  " +
+                    CreateSearchPreview(item.Diary.Content)))
+                .ToList();
+        }
+
+        private static string CreateSearchPreview(string content)
+        {
+            string preview = content
+                .Replace("\r", " ")
+                .Replace("\n", " ")
+                .Trim();
+
+            return preview.Length > 60
+                ? preview[..60] + "…"
+                : preview;
+        }
+
+        private void MoveToSearchResult(DateTime date)
+        {
+            if (tabControl1.SelectedTab?.Controls.Count is not > 0)
+                return;
+
+            currentMonth = date.Date;
+            SyncSmallCalendar();
+
+            Control activeControl = tabControl1.SelectedTab.Controls[0];
+            if (activeControl is CalendarControl calendarControl)
+            {
+                calendarControl.SetTargetDate(currentMonth);
+                calendarControl.SetViewMode(
+                    CalendarControl.CalendarViewMode.Day);
+            }
+            else if (activeControl is DiaryControl diaryControl)
+            {
+                diaryControl.SetTargetDate(currentMonth);
+                diaryControl.SetViewMode(
+                    CalendarControl.CalendarViewMode.Day);
+            }
+
+            UpdateCalendarViewMenu();
+            UpdateCalendarTitle();
+            UpdateSummaryView();
+        }
+
         private async void btnPrev_Click(object sender, EventArgs e)
         {
             ApplyTabRename();
 
-            CalendarControl.CalendarViewMode mode =
-                GetSelectedViewMode();
+            CalendarControl.CalendarViewMode mode = GetSelectedViewMode();
 
             currentMonth = mode switch
             {
-                CalendarControl.CalendarViewMode.Week =>
-                    currentMonth.AddDays(-7),
-
-                CalendarControl.CalendarViewMode.Day =>
-                    currentMonth.AddDays(-1),
-
-                _ =>
-                    currentMonth.AddMonths(-1)
+                CalendarControl.CalendarViewMode.Week => currentMonth.AddDays(-7),
+                CalendarControl.CalendarViewMode.Day => currentMonth.AddDays(-1),
+                _ => currentMonth.AddMonths(-1)
             };
 
             SyncSmallCalendar();
-
-            await LoadHolidaysAsync(
-                currentMonth.Year,
-                currentMonth.Month);
-
+            await LoadHolidaysAsync(currentMonth.Year, currentMonth.Month);
             RefreshAllViews();
         }
 
@@ -366,27 +557,17 @@ namespace calendar4
         {
             ApplyTabRename();
 
-            CalendarControl.CalendarViewMode mode =
-                GetSelectedViewMode();
+            CalendarControl.CalendarViewMode mode = GetSelectedViewMode();
 
             currentMonth = mode switch
             {
-                CalendarControl.CalendarViewMode.Week =>
-                    currentMonth.AddDays(7),
-
-                CalendarControl.CalendarViewMode.Day =>
-                    currentMonth.AddDays(1),
-
-                _ =>
-                    currentMonth.AddMonths(1)
+                CalendarControl.CalendarViewMode.Week => currentMonth.AddDays(7),
+                CalendarControl.CalendarViewMode.Day => currentMonth.AddDays(1),
+                _ => currentMonth.AddMonths(1)
             };
 
             SyncSmallCalendar();
-
-            await LoadHolidaysAsync(
-                currentMonth.Year,
-                currentMonth.Month);
-
+            await LoadHolidaysAsync(currentMonth.Year, currentMonth.Month);
             RefreshAllViews();
         }
 
@@ -394,50 +575,18 @@ namespace calendar4
         {
             tabAddMenu = new ContextMenuStrip();
 
-            tabAddMenu.Items.Add(
-                "다이어리",
-                null,
-                (s, ev) => AddNewCustomTab(
-                    "다이어리",
-                    TabType.Diary));
-
-            tabAddMenu.Items.Add(
-                "스터디 플래너",
-                null,
-                (s, ev) => AddNewCustomTab(
-                    "스터디 플래너",
-                    TabType.Planner));
-
-            tabAddMenu.Items.Add(
-                "시간표",
-                null,
-                (s, ev) => AddNewCustomTab(
-                    "시간표",
-                    TabType.Timetable));
-
-            tabAddMenu.Items.Add(
-                "개인 캘린더",
-                null,
-                (s, ev) => AddNewCustomTab(
-                    "개인 캘린더",
-                    TabType.Calendar));
-
-            tabAddMenu.Items.Add(
-                "공유 캘린더",
-                null,
-                (s, ev) => AddNewCustomTab(
-                    "공유 캘린더",
-                    TabType.SharedCalendar));
+            tabAddMenu.Items.Add("다이어리", null, (s, ev) => AddNewCustomTab("다이어리", TabType.Diary));
+            tabAddMenu.Items.Add("스터디 플래너", null, (s, ev) => AddNewCustomTab("스터디 플래너", TabType.Planner));
+            tabAddMenu.Items.Add("시간표", null, (s, ev) => AddNewCustomTab("시간표", TabType.Timetable));
+            tabAddMenu.Items.Add("개인 캘린더", null, (s, ev) => AddNewCustomTab("개인 캘린더", TabType.Calendar));
+            tabAddMenu.Items.Add("공유 캘린더", null, (s, ev) => AddNewCustomTab("공유 캘린더", TabType.SharedCalendar));
         }
 
-        private void tabControl1_Selecting(
-            object sender,
-            TabControlCancelEventArgs e)
+        private void tabControl1_Selecting(object sender, TabControlCancelEventArgs e)
         {
             ApplyTabRename();
 
-            if (e.TabPage != null &&
-                e.TabPage.Text == "+")
+            if (e.TabPage != null && e.TabPage.Text == "+")
             {
                 e.Cancel = true;
                 tabAddMenu?.Show(Cursor.Position);
@@ -448,8 +597,7 @@ namespace calendar4
         {
             int plusIndex = tabControl1.TabPages.Count - 1;
 
-            if (plusIndex >= 0 &&
-                tabControl1.TabPages[plusIndex].Text == "+")
+            if (plusIndex >= 0 && tabControl1.TabPages[plusIndex].Text == "+")
             {
                 tabControl1.TabPages.RemoveAt(plusIndex);
             }
@@ -464,24 +612,16 @@ namespace calendar4
         {
             tabContextMenu = new ContextMenuStrip();
 
-            tabContextMenu.Items.Add(
-                "이름 변경",
-                null,
-                (s, ev) =>
-                {
-                    if (targetTab != null)
-                        StartInlineRename(targetTab);
-                });
+            tabContextMenu.Items.Add("이름 변경", null, (s, ev) =>
+            {
+                if (targetTab != null)
+                    StartInlineRename(targetTab);
+            });
 
-            tabContextMenu.Items.Add(
-                "탭 삭제",
-                null,
-                DeleteItem_Click);
+            tabContextMenu.Items.Add("탭 삭제", null, DeleteItem_Click);
         }
 
-        private void tabControl1_MouseDown(
-            object sender,
-            MouseEventArgs e)
+        private void tabControl1_MouseDown(object sender, MouseEventArgs e)
         {
             ApplyTabRename();
 
@@ -496,9 +636,7 @@ namespace calendar4
                         if (clickedTab.Text != "+")
                         {
                             targetTab = clickedTab;
-                            tabContextMenu?.Show(
-                                tabControl1,
-                                e.Location);
+                            tabContextMenu?.Show(tabControl1, e.Location);
                         }
 
                         break;
@@ -514,20 +652,11 @@ namespace calendar4
 
             if (tabControl1.TabPages.Count - 1 <= 1)
             {
-                MessageBox.Show(
-                    "최소 하나의 탭은 유지해야 합니다.",
-                    "알림",
-                    MessageBoxButtons.OK,
-                    MessageBoxIcon.Information);
-
+                MessageBox.Show("최소 하나의 탭은 유지해야 합니다.", "알림", MessageBoxButtons.OK, MessageBoxIcon.Information);
                 return;
             }
 
-            if (MessageBox.Show(
-                $"[{targetTab.Text}] 탭을 정말 삭제하시겠습니까?",
-                "탭 삭제 확인",
-                MessageBoxButtons.YesNo,
-                MessageBoxIcon.Question) == DialogResult.Yes)
+            if (MessageBox.Show($"[{targetTab.Text}] 탭을 정말 삭제하시겠습니까?", "탭 삭제 확인", MessageBoxButtons.YesNo, MessageBoxIcon.Question) == DialogResult.Yes)
             {
                 tabControl1.TabPages.Remove(targetTab);
                 targetTab = null;
@@ -543,29 +672,20 @@ namespace calendar4
             };
 
             txtRenameEditor.KeyDown += TxtRenameEditor_KeyDown;
-            txtRenameEditor.Leave +=
-                (s, ev) => ApplyTabRename();
+            txtRenameEditor.Leave += (s, ev) => ApplyTabRename();
 
             this.Controls.Add(txtRenameEditor);
         }
 
-        private void tabControl1_DoubleClick(
-            object sender,
-            EventArgs e)
+        private void tabControl1_DoubleClick(object sender, EventArgs e)
         {
-            Point clientPoint =
-                tabControl1.PointToClient(Cursor.Position);
+            Point clientPoint = tabControl1.PointToClient(Cursor.Position);
 
-            for (int i = 0;
-                 i < tabControl1.TabPages.Count;
-                 i++)
+            for (int i = 0; i < tabControl1.TabPages.Count; i++)
             {
-                if (tabControl1.GetTabRect(i).Contains(clientPoint) &&
-                    tabControl1.TabPages[i].Text != "+")
+                if (tabControl1.GetTabRect(i).Contains(clientPoint) && tabControl1.TabPages[i].Text != "+")
                 {
-                    StartInlineRename(
-                        tabControl1.TabPages[i]);
-
+                    StartInlineRename(tabControl1.TabPages[i]);
                     break;
                 }
             }
@@ -578,21 +698,14 @@ namespace calendar4
 
             editingTab = tab;
 
-            Rectangle tabRect =
-                tabControl1.GetTabRect(
-                    tabControl1.TabPages.IndexOf(tab));
+            Rectangle tabRect = tabControl1.GetTabRect(tabControl1.TabPages.IndexOf(tab));
+            Point formPoint = this.PointToClient(tabControl1.PointToScreen(tabRect.Location));
 
-            Point formPoint =
-                this.PointToClient(
-                    tabControl1.PointToScreen(
-                        tabRect.Location));
-
-            txtRenameEditor.Bounds =
-                new Rectangle(
-                    formPoint.X + 4,
-                    formPoint.Y + 3,
-                    tabRect.Width - 8,
-                    tabRect.Height - 6);
+            txtRenameEditor.Bounds = new Rectangle(
+                formPoint.X + 4,
+                formPoint.Y + 3,
+                tabRect.Width - 8,
+                tabRect.Height - 6);
 
             txtRenameEditor.Text = editingTab.Text;
             txtRenameEditor.Visible = true;
@@ -601,9 +714,7 @@ namespace calendar4
             txtRenameEditor.SelectAll();
         }
 
-        private void TxtRenameEditor_KeyDown(
-            object sender,
-            KeyEventArgs e)
+        private void TxtRenameEditor_KeyDown(object sender, KeyEventArgs e)
         {
             if (e.KeyCode == Keys.Enter)
             {
@@ -617,24 +728,18 @@ namespace calendar4
             }
         }
 
-        private void Form_MouseDown_ApplyRename(
-            object sender,
-            MouseEventArgs e)
+        private void Form_MouseDown_ApplyRename(object sender, MouseEventArgs e)
         {
             ApplyTabRename();
         }
 
         private void ApplyTabRename()
         {
-            if (editingTab != null &&
-                txtRenameEditor != null &&
-                txtRenameEditor.Visible)
+            if (editingTab != null && txtRenameEditor != null && txtRenameEditor.Visible)
             {
-                if (!string.IsNullOrWhiteSpace(
-                    txtRenameEditor.Text))
+                if (!string.IsNullOrWhiteSpace(txtRenameEditor.Text))
                 {
-                    editingTab.Text =
-                        txtRenameEditor.Text;
+                    editingTab.Text = txtRenameEditor.Text;
                 }
 
                 txtRenameEditor.Visible = false;
@@ -642,80 +747,76 @@ namespace calendar4
             }
         }
 
-        private TabPage CreateTabPage(
-            string title,
-            TabType type)
+        private TabPage CreateTabPage(string title, TabType type)
         {
-            TabPage newTab =
-                new TabPage(title)
-                {
-                    Tag = type
-                };
+            TabPage newTab = new TabPage(title)
+            {
+                Tag = type
+            };
 
             Control content;
 
             switch (type)
             {
                 case TabType.Diary:
-                    var diaryCtrl =
-                        new DiaryControl
-                        {
-                            Dock = DockStyle.Fill
-                        };
+                    var diaryCtrl = new DiaryControl(loggedInUserId)
+                    {
+                        Dock = DockStyle.Fill
+                    };
 
                     diaryCtrl.DataChanged +=
                         (s, ev) => UpdateSummaryView();
+
+                    diaryCtrl.DateOrScheduleChanged +=
+                        (s, ev) =>
+                        {
+                            currentMonth =
+                                diaryCtrl.GetTargetDate();
+
+                            SyncSmallCalendar();
+                            RefreshAllViews();
+                        };
 
                     content = diaryCtrl;
                     break;
 
                 case TabType.Planner:
-                    content =
-                        new PlannerControl
-                        {
-                            Dock = DockStyle.Fill
-                        };
+                    content = new PlannerControl(loggedInUserId)
+                    {
+                        Dock = DockStyle.Fill
+                    };
                     break;
 
                 case TabType.Timetable:
-                    content =
-                        new Timetable(loggedInUserId)
-                        {
-                            Dock = DockStyle.Fill
-                        };
+                    content = new Timetable(loggedInUserId)
+                    {
+                        Dock = DockStyle.Fill
+                    };
                     break;
 
                 case TabType.SharedCalendar:
-                    content =
-                        new Label
-                        {
-                            Text =
-                                $"{title} (공유 캘린더 화면)",
-                            Dock = DockStyle.Fill,
-                            TextAlign =
-                                ContentAlignment.MiddleCenter
-                        };
+                    content = new Label
+                    {
+                        Text = $"{title} (공유 캘린더 화면)",
+                        Dock = DockStyle.Fill,
+                        TextAlign = ContentAlignment.MiddleCenter
+                    };
                     break;
 
                 case TabType.Calendar:
                 default:
-                    var calCtrl =
-                        new CalendarControl
-                        {
-                            Dock = DockStyle.Fill
-                        };
+                    var calCtrl = new CalendarControl(loggedInUserId)
+                    {
+                        Dock = DockStyle.Fill
+                    };
 
                     calCtrl.SetHolidayMap(holidayMap);
-
-                    calCtrl.DateOrScheduleChanged +=
-                        (s, ev) =>
-                        {
-                            currentMonth =
-                                calCtrl.GetTargetDate();
-
-                            SyncSmallCalendar();
-                            RefreshAllViews();
-                        };
+                    calCtrl.DateOrScheduleChanged += (s, ev) =>
+                    {
+                        currentMonth = calCtrl.GetTargetDate();
+                        SyncSmallCalendar();
+                        RefreshAllViews();
+                    };
 
                     content = calCtrl;
                     break;
@@ -762,9 +863,24 @@ namespace calendar4
         private void SetupDefaultFirstTab()
         {
             tabControl1.TabPages.Clear();
-            CreateTabPage(
-                "개인 캘린더",
-                TabType.Calendar);
+            CreateTabPage("개인 캘린더", TabType.Calendar);
+        }
+
+        private void btnMy_Click(object sender, EventArgs e)
+        {
+            isSwitchingForm = true;
+            
+            Mypage mypage = new Mypage(this.loggedInUserId);
+            mypage.ShowDialog();
+        }
+
+        private void btn_exit_Click(object sender, EventArgs e)
+        {
+            isSwitchingForm = true;
+            Application.Restart();
+            this.Close();
+            Login login = new Login();
+            login.ShowDialog();
         }
     }
 }

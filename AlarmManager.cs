@@ -5,6 +5,10 @@ public sealed class AlarmManager : IDisposable
     private readonly TabControl tabControl;
     private readonly System.Windows.Forms.Timer checkTimer;
     private readonly HashSet<AlarmKey> notifiedSchedules = new();
+
+   // 캘린더 중복 알람 방지
+    private readonly record struct AlarmKey(string ScheduleText, DateTime StartAt);
+
     private bool disposed;
 
     public AlarmManager(TabControl tabControl)
@@ -67,7 +71,9 @@ public sealed class AlarmManager : IDisposable
                         continue;
 
                     var startAt = date.Date.AddHours(schedule.StartHour);
-                    var key = new AlarmKey(schedule.Id, startAt);
+
+                    var key = new AlarmKey(schedule.Text, startAt);
+
                     activeKeys.Add(key);
 
                     var notifyAt = startAt.AddMinutes(-schedule.NotificationOffset);
@@ -75,7 +81,7 @@ public sealed class AlarmManager : IDisposable
                         continue;
 
                     notifiedSchedules.Add(key);
-                    ShowAlarm(tab.Text, schedule, startAt);
+                    ShowAlarm(tab.Text, schedule, startAt, now);
                 }
             }
         }
@@ -84,14 +90,38 @@ public sealed class AlarmManager : IDisposable
     }
 
     private static void ShowAlarm(
-        string calendarName,
-        CalendarScheduleEntry schedule,
-        DateTime startAt)
+    string calendarName,
+    CalendarScheduleEntry schedule,
+    DateTime startAt,
+    DateTime now)
     {
-        var title = string.IsNullOrWhiteSpace(calendarName)
-            ? "일정 알림"
-            : $"{calendarName} 알림";
-        var message = $"{startAt:HH:mm}  {schedule.Text}\n{FormatOffset(schedule.NotificationOffset)} 뒤에 일정이 시작됩니다.";
+        var title =
+            string.IsNullOrWhiteSpace(calendarName)
+                ? "일정 알림"
+                : $"{calendarName} 알림";
+
+        TimeSpan remainingTime =
+            startAt - now;
+
+        int totalMinutes =
+            (int)Math.Round(
+                remainingTime.TotalMinutes);
+
+        string timeString;
+
+        if (totalMinutes > 0)
+        {
+            timeString =
+                $"{FormatOffset(totalMinutes)} 뒤에";
+        }
+        else
+        {
+            timeString = "곧";
+        }
+
+        var message =
+            $"{startAt:HH:mm}  {schedule.Text}\n" +
+            $"{timeString} 일정이 시작됩니다.";
 
         new ddayalarm(title, message).Show();
     }
@@ -114,5 +144,8 @@ public sealed class AlarmManager : IDisposable
             throw new ObjectDisposedException(nameof(AlarmManager));
     }
 
-    private readonly record struct AlarmKey(Guid ScheduleId, DateTime StartAt);
+
+    
+
+
 }

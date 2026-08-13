@@ -1,4 +1,5 @@
 ﻿
+using calendar4.Services;
 using System;
 using System.Collections.Generic;
 using System.Drawing;
@@ -14,7 +15,8 @@ namespace calendar4
     public partial class DiaryControl : UserControl
     {
         private DataGridView dgv;
-        private readonly DiaryRepository diaryRepository = new();
+        private readonly int loggedInUserId;
+        private readonly DiaryDbRepository diaryDbRepository = new();
         private readonly HolidayService holidayService = new();
         private Dictionary<string, DiaryEntry> diaryMap = new Dictionary<string, DiaryEntry>();
         private Dictionary<DateTime, string> holidayMap = new Dictionary<DateTime, string>();
@@ -23,9 +25,11 @@ namespace calendar4
         private CalendarControl.CalendarViewMode viewMode = CalendarControl.CalendarViewMode.Month;
 
         public event EventHandler DataChanged;
+        public event EventHandler DateOrScheduleChanged;
 
-        public DiaryControl()
+        public DiaryControl(int userId)
         {
+            loggedInUserId = userId;
             InitializeUserControl();
             LoadDiaries();
             UpdateView();
@@ -53,10 +57,47 @@ namespace calendar4
 
             dgv.Resize += (s, ev) => AdjustRowHeights();
             dgv.CellDoubleClick += DgvDiary_CellDoubleClick;
+            dgv.MouseEnter += (s, e) => dgv.Focus();
+            dgv.MouseWheel += DgvDiary_MouseWheel;
 
             Controls.Add(dgv);
 
             Load += DiaryControl_Load;
+        }
+
+        private void DgvDiary_MouseWheel(
+            object? sender,
+            MouseEventArgs e)
+        {
+            int moveDirection = e.Delta > 0 ? -1 : 1;
+
+            switch (viewMode)
+            {
+                case CalendarControl.CalendarViewMode.Month:
+                    currentDate =
+                        currentDate.AddMonths(moveDirection);
+                    break;
+
+                case CalendarControl.CalendarViewMode.Week:
+                    currentDate =
+                        currentDate.AddDays(moveDirection * 7);
+                    break;
+
+                case CalendarControl.CalendarViewMode.Day:
+                    currentDate =
+                        currentDate.AddDays(moveDirection);
+                    break;
+            }
+
+            UpdateView();
+
+            _ = LoadHolidaysAsync(
+                currentDate.Year,
+                currentDate.Month);
+
+            DateOrScheduleChanged?.Invoke(
+                this,
+                EventArgs.Empty);
         }
 
         private async void DiaryControl_Load(object sender, EventArgs e)
@@ -69,6 +110,11 @@ namespace calendar4
             currentDate = date;
             UpdateView();
             _ = LoadHolidaysAsync(currentDate.Year, currentDate.Month);
+        }
+
+        public DateTime GetTargetDate()
+        {
+            return currentDate;
         }
 
         public void SetViewMode(CalendarControl.CalendarViewMode newMode)
@@ -477,62 +523,154 @@ namespace calendar4
         }
 
         private void DgvDiary_CellDoubleClick(
-            object? sender,
-            DataGridViewCellEventArgs e)
+    object? sender,
+    DataGridViewCellEventArgs e)
         {
             if (e.RowIndex < 0 || e.ColumnIndex < 0)
                 return;
 
             var cell = dgv[e.ColumnIndex, e.RowIndex];
+
             if (cell.Tag is not DateTime selectedDate)
                 return;
 
-            var key = selectedDate.ToString("yyyy-MM-dd");
-            diaryMap.TryGetValue(key, out var currentEntry);
+            var key =
+                selectedDate.ToString("yyyy-MM-dd");
 
-            using var dialog = new DiaryEntryDialog(selectedDate, currentEntry);
-            var result = dialog.ShowDialog(FindForm());
-            if (result == DialogResult.OK)
+            diaryMap.TryGetValue(
+                key,
+                out var currentEntry);
+
+            using var dialog =
+                new DiaryEntryDialog(
+                    selectedDate,
+                    currentEntry);
+
+            var result =
+                dialog.ShowDialog(FindForm());
+
+            try
             {
-                if (dialog.IsEmpty)
+                // =====================================
+                // 저장 버튼
+                // =====================================
+                if (result == DialogResult.OK)
                 {
+                    // 내용이 전부 비어있으면 삭제 처리
+                    if (dialog.IsEmpty)
+                    {
+                        if (currentEntry != null)
+                        {
+                            diaryDbRepository.Delete(
+                                loggedInUserId,
+                                currentEntry);
+                        }
+
+                        diaryMap.Remove(key);
+                    }
+                    else
+                    {
+                        // ---------------------------------
+                        // 새 일기
+                        // ---------------------------------
+                        if (currentEntry == null)
+                        {
+                            var newEntry =
+                                new DiaryEntry
+                                {
+                                    DateStr = key,
+                                    Title = dialog.DiaryTitle,
+                                    Content = dialog.DiaryContent
+                                };
+
+                            int newDiaryId =
+                                diaryDbRepository.Add(
+                                    loggedInUserId,
+                                    newEntry);
+
+                            newEntry.DiaryId =
+                                newDiaryId;
+
+                            diaryMap[key] =
+                                newEntry;
+                        }
+
+                        // ---------------------------------
+                        // 기존 일기 수정
+                        // ---------------------------------
+                        else
+                        {
+                            currentEntry.Title =
+                                dialog.DiaryTitle;
+
+                            currentEntry.Content =
+                                dialog.DiaryContent;
+
+                            currentEntry.DateStr =
+                                key;
+
+                            diaryDbRepository.Update(
+                                loggedInUserId,
+                                currentEntry);
+
+                            diaryMap[key] =
+                                currentEntry;
+                        }
+                    }
+                }
+
+                // =====================================
+                // 삭제 버튼
+                // =====================================
+                else if (result == DialogResult.Yes)
+                {
+                    if (currentEntry != null)
+                    {
+                        diaryDbRepository.Delete(
+                            loggedInUserId,
+                            currentEntry);
+                    }
+
                     diaryMap.Remove(key);
                 }
-                else
-                {
-                    diaryMap[key] = new DiaryEntry
-                    {
-                        DateStr = key,
-                        Title = dialog.DiaryTitle,
-                        Content = dialog.DiaryContent
-                    };
-                }
-                SaveDiaries();
             }
-            else if (result == DialogResult.Yes)
+            catch (Exception ex)
             {
-                diaryMap.Remove(key);
-                SaveDiaries();
+                MessageBox.Show(
+                    $"일기를 DB에 저장하는 중 오류가 발생했습니다.\n\n{ex.Message}",
+                    "DB 저장 오류",
+                    MessageBoxButtons.OK,
+                    MessageBoxIcon.Error);
+
+                // 문제가 생기면 DB 기준으로 복구
+                LoadDiaries();
             }
 
             UpdateGrid();
-            DataChanged?.Invoke(this, EventArgs.Empty);
-        }
 
-        public void SaveDiaries()
-        {
-            try
-            {
-                diaryRepository.Save(diaryMap);
-            }
-            catch
-            {
-            }
+            DataChanged?.Invoke(
+                this,
+                EventArgs.Empty);
         }
 
         public void LoadDiaries()
         {
-            diaryMap = diaryRepository.Load();
+            try
+            {
+                diaryMap =
+                    diaryDbRepository.Load(loggedInUserId);
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show(
+                    $"일기를 불러오는 중 오류가 발생했습니다.\n\n{ex.Message}",
+                    "DB 불러오기 오류",
+                    MessageBoxButtons.OK,
+                    MessageBoxIcon.Error);
+
+                diaryMap =
+                    new Dictionary<string, DiaryEntry>();
+            }
         }
     }
 }

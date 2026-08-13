@@ -112,7 +112,6 @@
             button4.TabIndex = 3;
             button4.Text = "회원탈퇴";
             button4.UseVisualStyleBackColor = true;
-            button4.Click += button4_Click;
             // 
             // btnRe
             // 
@@ -213,6 +212,7 @@
             Name = "Mypage";
             StartPosition = FormStartPosition.CenterScreen;
             Text = "Mypage";
+            FormClosed += Mypage_FormClosed;
             groupBox1.ResumeLayout(false);
             groupBox1.PerformLayout();
             tabControl1.ResumeLayout(false);

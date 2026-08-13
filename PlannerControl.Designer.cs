@@ -36,11 +36,12 @@
             btnAddTask = new Button();
             txtTaskInput = new TextBox();
             lblLeftTitle = new Label();
+            groupBox1 = new GroupBox();
+            label1 = new Label();
+            lblStudyTimeValue = new Label();
             panel2 = new Panel();
             btnClearTime_Click = new Button();
             dgvTimeTable = new DataGridView();
-            colTime = new DataGridViewTextBoxColumn();
-            colStatus = new DataGridViewTextBoxColumn();
             btnFillTime = new Button();
             cbColorPicker = new ComboBox();
             dtpEnd = new DateTimePicker();
@@ -51,6 +52,7 @@
             lblRightTitle = new Label();
             panel1.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)dgvTodoList).BeginInit();
+            groupBox1.SuspendLayout();
             panel2.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)dgvTimeTable).BeginInit();
             SuspendLayout();
@@ -131,9 +133,41 @@
             lblLeftTitle.TabIndex = 0;
             lblLeftTitle.Text = "📋오늘의 체크리스트";
             // 
+            // groupBox1
+            // 
+            groupBox1.Controls.Add(label1);
+            groupBox1.Controls.Add(lblStudyTimeValue);
+            groupBox1.Location = new Point(31, 301);
+            groupBox1.Name = "groupBox1";
+            groupBox1.Size = new Size(141, 100);
+            groupBox1.TabIndex = 12;
+            groupBox1.TabStop = false;
+            // 
+            // label1
+            // 
+            label1.AutoSize = true;
+            label1.Font = new Font("한컴 말랑말랑 Bold", 12F, FontStyle.Bold, GraphicsUnit.Point);
+            label1.Location = new Point(13, 19);
+            label1.Name = "label1";
+            label1.Size = new Size(112, 21);
+            label1.TabIndex = 10;
+            label1.Text = "오늘의 공부시간";
+            label1.TextAlign = ContentAlignment.TopCenter;
+            // 
+            // lblStudyTimeValue
+            // 
+            lblStudyTimeValue.AutoSize = true;
+            lblStudyTimeValue.Font = new Font("한컴 말랑말랑 Regular", 12F, FontStyle.Regular, GraphicsUnit.Point);
+            lblStudyTimeValue.Location = new Point(39, 63);
+            lblStudyTimeValue.Name = "lblStudyTimeValue";
+            lblStudyTimeValue.Size = new Size(61, 21);
+            lblStudyTimeValue.TabIndex = 11;
+            lblStudyTimeValue.Text = "0H 0M";
+            // 
             // panel2
             // 
             panel2.BorderStyle = BorderStyle.FixedSingle;
+            panel2.Controls.Add(groupBox1);
             panel2.Controls.Add(btnClearTime_Click);
             panel2.Controls.Add(dgvTimeTable);
             panel2.Controls.Add(btnFillTime);
@@ -151,7 +185,7 @@
             // 
             // btnClearTime_Click
             // 
-            btnClearTime_Click.Location = new Point(324, 84);
+            btnClearTime_Click.Location = new Point(65, 236);
             btnClearTime_Click.Name = "btnClearTime_Click";
             btnClearTime_Click.Size = new Size(75, 23);
             btnClearTime_Click.TabIndex = 9;
@@ -164,34 +198,20 @@
             dgvTimeTable.AllowUserToAddRows = false;
             dgvTimeTable.BackgroundColor = Color.White;
             dgvTimeTable.ColumnHeadersHeightSizeMode = DataGridViewColumnHeadersHeightSizeMode.AutoSize;
-            dgvTimeTable.Columns.AddRange(new DataGridViewColumn[] { colTime, colStatus });
-            dgvTimeTable.Location = new Point(3, 113);
+            dgvTimeTable.Location = new Point(211, 3);
             dgvTimeTable.Name = "dgvTimeTable";
             dgvTimeTable.ReadOnly = true;
             dgvTimeTable.RowHeadersVisible = false;
             dgvTimeTable.RowTemplate.Height = 25;
-            dgvTimeTable.Size = new Size(427, 385);
+            dgvTimeTable.Size = new Size(219, 490);
             dgvTimeTable.TabIndex = 8;
-            // 
-            // colTime
-            // 
-            colTime.HeaderText = "시간";
-            colTime.Name = "colTime";
-            colTime.ReadOnly = true;
-            // 
-            // colStatus
-            // 
-            colStatus.AutoSizeMode = DataGridViewAutoSizeColumnMode.Fill;
-            colStatus.HeaderText = "일정 진행 한 시간";
-            colStatus.Name = "colStatus";
-            colStatus.ReadOnly = true;
             // 
             // btnFillTime
             // 
             btnFillTime.BackColor = Color.LightYellow;
             btnFillTime.Cursor = Cursors.Hand;
             btnFillTime.ForeColor = SystemColors.ActiveCaptionText;
-            btnFillTime.Location = new Point(324, 55);
+            btnFillTime.Location = new Point(119, 190);
             btnFillTime.Name = "btnFillTime";
             btnFillTime.Size = new Size(75, 23);
             btnFillTime.TabIndex = 7;
@@ -202,8 +222,8 @@
             // cbColorPicker
             // 
             cbColorPicker.FormattingEnabled = true;
-            cbColorPicker.Items.AddRange(new object[] { "\U0001f7e1 노랑", "", "\U0001f7e2 연두", "", "🔵 하늘", "", "\U0001f7e3 보라", "", "🔴 핑크" });
-            cbColorPicker.Location = new Point(208, 59);
+            cbColorPicker.Items.AddRange(new object[] { "노랑", "연두", "하늘", "보라", "핑크" });
+            cbColorPicker.Location = new Point(3, 191);
             cbColorPicker.Name = "cbColorPicker";
             cbColorPicker.Size = new Size(110, 23);
             cbColorPicker.TabIndex = 6;
@@ -213,7 +233,7 @@
             // 
             dtpEnd.CustomFormat = "HH:mm";
             dtpEnd.Format = DateTimePickerFormat.Custom;
-            dtpEnd.Location = new Point(121, 59);
+            dtpEnd.Location = new Point(128, 146);
             dtpEnd.Name = "dtpEnd";
             dtpEnd.ShowUpDown = true;
             dtpEnd.Size = new Size(68, 23);
@@ -224,7 +244,7 @@
             // 
             dtpStart.CustomFormat = "HH:mm";
             dtpStart.Format = DateTimePickerFormat.Custom;
-            dtpStart.Location = new Point(12, 59);
+            dtpStart.Location = new Point(5, 146);
             dtpStart.Name = "dtpStart";
             dtpStart.ShowUpDown = true;
             dtpStart.Size = new Size(68, 23);
@@ -235,7 +255,7 @@
             // 
             label3.AutoSize = true;
             label3.Font = new Font("맑은 고딕", 14.25F, FontStyle.Bold, GraphicsUnit.Point);
-            label3.Location = new Point(86, 57);
+            label3.Location = new Point(89, 144);
             label3.Name = "label3";
             label3.Size = new Size(26, 25);
             label3.TabIndex = 3;
@@ -245,15 +265,15 @@
             // 
             cbTaskList.DropDownStyle = ComboBoxStyle.DropDownList;
             cbTaskList.FormattingEnabled = true;
-            cbTaskList.Location = new Point(93, 26);
+            cbTaskList.Location = new Point(8, 105);
             cbTaskList.Name = "cbTaskList";
-            cbTaskList.Size = new Size(330, 23);
+            cbTaskList.Size = new Size(193, 23);
             cbTaskList.TabIndex = 2;
             // 
             // notice
             // 
             notice.AutoSize = true;
-            notice.Location = new Point(17, 29);
+            notice.Location = new Point(10, 75);
             notice.Name = "notice";
             notice.Size = new Size(63, 15);
             notice.TabIndex = 1;
@@ -263,7 +283,7 @@
             // 
             lblRightTitle.AutoSize = true;
             lblRightTitle.Font = new Font("한컴 말랑말랑 Regular", 11.2499981F, FontStyle.Regular, GraphicsUnit.Point);
-            lblRightTitle.Location = new Point(17, 0);
+            lblRightTitle.Location = new Point(8, 29);
             lblRightTitle.Name = "lblRightTitle";
             lblRightTitle.Size = new Size(142, 20);
             lblRightTitle.TabIndex = 0;
@@ -281,6 +301,8 @@
             panel1.ResumeLayout(false);
             panel1.PerformLayout();
             ((System.ComponentModel.ISupportInitialize)dgvTodoList).EndInit();
+            groupBox1.ResumeLayout(false);
+            groupBox1.PerformLayout();
             panel2.ResumeLayout(false);
             panel2.PerformLayout();
             ((System.ComponentModel.ISupportInitialize)dgvTimeTable).EndInit();
@@ -310,5 +332,8 @@
         private DataGridViewTextBoxColumn colStatus;
         private Button btnClearTime_Click;
         private Button btnDeleteTask_Click;
+        private GroupBox groupBox1;
+        private Label label1;
+        private Label lblStudyTimeValue;
     }
 }
