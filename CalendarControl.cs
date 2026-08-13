@@ -1,11 +1,11 @@
-﻿using calendar4.Services;
+﻿
 using System;
 using System.Collections.Generic;
 using System.Drawing;
 using System.IO;
 using System.Text.Json;
 using System.Windows.Forms;
-using System.Linq;
+using calendar4.Services;
 
 namespace calendar4
 {
@@ -85,17 +85,15 @@ namespace calendar4
             dgv.CellPainting +=
                 DgvCalendar_CellPainting;
 
-            // ✨ 추가된 부분 1: 마우스가 캘린더 위에 올라오면 포커스를 주어 휠 이벤트를 받을 수 있게 함
             dgv.MouseEnter += (s, e) => dgv.Focus();
-
-            // ✨ 추가된 부분 2: 마우스 휠 이벤트 연결
             dgv.MouseWheel += DgvCalendar_MouseWheel;
 
             Controls.Add(dgv);
         }
 
-        // ✨ 추가된 부분 3: 휠 스크롤 처리 메서드 (위로 굴리면 과거, 아래로 굴리면 미래로 이동)
-        private void DgvCalendar_MouseWheel(object? sender, MouseEventArgs e)
+        private void DgvCalendar_MouseWheel(
+            object? sender,
+            MouseEventArgs e)
         {
             int moveDirection = e.Delta > 0 ? -1 : 1;
 
@@ -115,7 +113,10 @@ namespace calendar4
             }
 
             UpdateView();
-            DateOrScheduleChanged?.Invoke(this, EventArgs.Empty);
+
+            DateOrScheduleChanged?.Invoke(
+                this,
+                EventArgs.Empty);
         }
 
         public void SetViewMode(CalendarViewMode newMode)
@@ -666,8 +667,8 @@ namespace calendar4
         }
 
         private void DgvCalendar_CellDoubleClick(
-            object? sender,
-            DataGridViewCellEventArgs e)
+    object? sender,
+    DataGridViewCellEventArgs e)
         {
             if (e.RowIndex < 0 || e.ColumnIndex < 0)
                 return;
@@ -813,4 +814,5 @@ namespace calendar4
             }
         }
     }
+
 }

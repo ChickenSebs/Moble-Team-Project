@@ -30,6 +30,8 @@ namespace calendar4
 
         private Dictionary<DateTime, string> holidayMap = new Dictionary<DateTime, string>();
 
+        private bool isSwitchingForm = false;
+
         public enum TabType
         {
             Diary,
@@ -68,13 +70,16 @@ namespace calendar4
 
             InitSmallCalendarEvent();
             LoadTabs();
+
             alarmManager = new AlarmManager(tabControl1);
             alarmManager.Start();
             SyncSmallCalendar();
 
-            await LoadHolidaysAsync(currentMonth.Year, currentMonth.Month);
-
+            // 1. 먼저 공휴일 없이 빠르게 뷰를 띄웁니다.
             RefreshAllViews();
+
+            // 2. 공휴일 정보는 백그라운드에서 비동기로 가져온 뒤 캘린더만 갱신시킵니다.
+            await LoadHolidaysAsync(currentMonth.Year, currentMonth.Month);
         }
 
         private async Task LoadHolidaysAsync(int year, int month)
@@ -109,6 +114,11 @@ namespace calendar4
         {
             alarmManager?.Dispose();
             SaveTabs();
+            
+            if(!isSwitchingForm)
+            {
+                Environment.Exit(0);
+            }
         }
 
         private void InitUIStyleEvents()
@@ -513,7 +523,6 @@ namespace calendar4
             }
         }
 
-
         private void StartInlineRename(TabPage tab)
         {
             if (txtRenameEditor == null)
@@ -586,17 +595,21 @@ namespace calendar4
                     {
                         Dock = DockStyle.Fill
                     };
-                    diaryCtrl.DataChanged += (s, ev) => UpdateSummaryView();
-                    content = diaryCtrl;
-                    diaryCtrl.DateOrScheduleChanged += (s, ev) =>
-                    {
-                        currentMonth = diaryCtrl.GetTargetDate();
-                        SyncSmallCalendar();
-                        RefreshAllViews();
-                    };
+
+                    diaryCtrl.DataChanged +=
+                        (s, ev) => UpdateSummaryView();
+
+                    diaryCtrl.DateOrScheduleChanged +=
+                        (s, ev) =>
+                        {
+                            currentMonth =
+                                diaryCtrl.GetTargetDate();
+
+                            SyncSmallCalendar();
+                            RefreshAllViews();
+                        };
 
                     content = diaryCtrl;
-                    
                     break;
 
                 case TabType.Planner:
@@ -687,13 +700,16 @@ namespace calendar4
 
         private void btnMy_Click(object sender, EventArgs e)
         {
-            this.Close();
+            isSwitchingForm = true;
+            
             Mypage mypage = new Mypage(this.loggedInUserId);
             mypage.ShowDialog();
         }
 
         private void btn_exit_Click(object sender, EventArgs e)
         {
+            isSwitchingForm = true;
+            Application.Restart();
             this.Close();
             Login login = new Login();
             login.ShowDialog();

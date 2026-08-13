@@ -67,6 +67,7 @@ namespace calendar4
                 updatedItemsText.Add("이메일");
             }
 
+
             // 동적 UPDATE 쿼리 생성
             // 예: UPDATE user SET pw = @newPw, name = @newName WHERE user_id = @userId AND pw = @currentPw
             string query = $"UPDATE user SET {string.Join(", ", updateFields)} WHERE user_id = @userId AND pw = @currentPw";
@@ -112,16 +113,34 @@ namespace calendar4
                         }
                     }
                 }
+
+
                 catch (Exception ex)
                 {
                     MessageBox.Show("오류 발생: " + ex.Message, "에러", MessageBoxButtons.OK, MessageBoxIcon.Error);
                 }
             }
-        }
-
-        private void button4_Click(object sender, EventArgs e)
-        {
 
         }
-    }
-}
+                private async void Mypage_FormClosed(object sender, FormClosedEventArgs e)
+                 {
+            // 실행 중인 폼들 중에서 이름이 "mainForm"인 폼을 찾습니다.
+                        await Task.Delay(200);
+                        Form main = Application.OpenForms["mainForm"];
+
+                        if (main != null)
+                                {   
+                                    // 숨겨져 있던 메인 폼을 다시 화면에 보여줍니다.
+                                    main.Show();
+                                }
+                        else
+                                {
+                                    mainForm newMain = new mainForm();
+                                        newMain.Show();
+                                }
+                            }
+
+
+                        }
+    
+                    }

@@ -1,4 +1,5 @@
-﻿using calendar4.Services;
+﻿
+using calendar4.Services;
 using System;
 using System.Collections.Generic;
 using System.Drawing;
@@ -8,7 +9,6 @@ using System.Net.Http;
 using System.Text.Json;
 using System.Windows.Forms;
 using System.Xml.Linq;
-using static calendar4.CalendarControl; // 메모장 코드 반영[cite: 1]
 
 namespace calendar4
 {
@@ -25,7 +25,7 @@ namespace calendar4
         private CalendarControl.CalendarViewMode viewMode = CalendarControl.CalendarViewMode.Month;
 
         public event EventHandler DataChanged;
-        public event EventHandler DateOrScheduleChanged; // 메모장 코드 반영[cite: 1]
+        public event EventHandler DateOrScheduleChanged;
 
         public DiaryControl(int userId)
         {
@@ -57,14 +57,47 @@ namespace calendar4
 
             dgv.Resize += (s, ev) => AdjustRowHeights();
             dgv.CellDoubleClick += DgvDiary_CellDoubleClick;
-
-            // 메모장 코드 반영: 마우스 이벤트 추가[cite: 1]
             dgv.MouseEnter += (s, e) => dgv.Focus();
-            dgv.MouseWheel += DgvCalendar_MouseWheel;
+            dgv.MouseWheel += DgvDiary_MouseWheel;
 
             Controls.Add(dgv);
 
             Load += DiaryControl_Load;
+        }
+
+        private void DgvDiary_MouseWheel(
+            object? sender,
+            MouseEventArgs e)
+        {
+            int moveDirection = e.Delta > 0 ? -1 : 1;
+
+            switch (viewMode)
+            {
+                case CalendarControl.CalendarViewMode.Month:
+                    currentDate =
+                        currentDate.AddMonths(moveDirection);
+                    break;
+
+                case CalendarControl.CalendarViewMode.Week:
+                    currentDate =
+                        currentDate.AddDays(moveDirection * 7);
+                    break;
+
+                case CalendarControl.CalendarViewMode.Day:
+                    currentDate =
+                        currentDate.AddDays(moveDirection);
+                    break;
+            }
+
+            UpdateView();
+
+            _ = LoadHolidaysAsync(
+                currentDate.Year,
+                currentDate.Month);
+
+            DateOrScheduleChanged?.Invoke(
+                this,
+                EventArgs.Empty);
         }
 
         private async void DiaryControl_Load(object sender, EventArgs e)
@@ -79,7 +112,6 @@ namespace calendar4
             _ = LoadHolidaysAsync(currentDate.Year, currentDate.Month);
         }
 
-        // ✨ 새로 추가된 부분: 메인 폼에서 다이어리의 현재 날짜를 가져갈 수 있게 해줍니다.[cite: 1]
         public DateTime GetTargetDate()
         {
             return currentDate;
@@ -491,8 +523,8 @@ namespace calendar4
         }
 
         private void DgvDiary_CellDoubleClick(
-            object? sender,
-            DataGridViewCellEventArgs e)
+    object? sender,
+    DataGridViewCellEventArgs e)
         {
             if (e.RowIndex < 0 || e.ColumnIndex < 0)
                 return;
@@ -640,26 +672,6 @@ namespace calendar4
                     new Dictionary<string, DiaryEntry>();
             }
         }
-
-        // 스크롤로 다음달&이전달 넘어가기 (메모장 코드 반영)[cite: 1]
-        private void DgvCalendar_MouseWheel(object? sender, MouseEventArgs e)
-        {
-            int moveDirection = e.Delta > 0 ? -1 : 1;
-
-            switch (viewMode)
-            {
-                case CalendarViewMode.Month:
-                    currentDate = currentDate.AddMonths(moveDirection);
-                    break;
-                case CalendarViewMode.Week:
-                    currentDate = currentDate.AddDays(moveDirection * 7);
-                    break;
-                case CalendarViewMode.Day:
-                    currentDate = currentDate.AddDays(moveDirection);
-                    break;
-            }
-            UpdateView();
-            DateOrScheduleChanged?.Invoke(this, EventArgs.Empty);
-        }
     }
 }
+

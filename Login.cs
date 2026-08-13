@@ -14,9 +14,14 @@ namespace tap
 {
     public partial class Login : Form
     {
+        private bool isLoginSucess = false;
+
         public Login()
         {
             InitializeComponent();
+
+            
+            
         }
 
         private void Login_Load_1(object sender, EventArgs e)
@@ -79,6 +84,9 @@ namespace tap
 
                                 MessageBox.Show($"{userName}님, 환영합니다!", "로그인 성공", MessageBoxButtons.OK, MessageBoxIcon.Information);
 
+                                // 👇 추가된 부분: 메인 폼으로 넘어가기 직전에 변수를 true로 변경하여 강제 종료 방지
+                                isLoginSucess = true;
+
                                 // 메인 폼으로 user_id를 전달하며 이동
                                 mainForm mainForm = new mainForm(loggedInUserId);
                                 mainForm.Show();
@@ -103,6 +111,15 @@ namespace tap
         private void btnHello_Click(object sender, EventArgs e)
         {
             MessageBox.Show("Hello cho");
+        }
+
+        private void Login_FormClosing(object sender, FormClosingEventArgs e)
+        {
+            // 로그인을 성공해서 넘어가는 상황이 아니라면 강제 종료
+            if (!isLoginSucess)
+            {
+                Environment.Exit(0);
+            }
         }
     }
 }
