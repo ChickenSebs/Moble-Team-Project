@@ -44,6 +44,9 @@ namespace calendar4
             InitializeComponent();
             InitCalendarViewOptions();
             InitUIStyleEvents();
+
+            // ✨ 수정됨: 오류가 발생하던 고정 컨트롤 이벤트 연결 코드를 삭제했습니다.
+            // (대신 CreateTabPage 메서드에서 동적으로 연결합니다.)
         }
 
         public mainForm(int userId) : this()
@@ -583,6 +586,15 @@ namespace calendar4
                         Dock = DockStyle.Fill
                     };
                     diaryCtrl.DataChanged += (s, ev) => UpdateSummaryView();
+
+                    // 0813 수정 바뀐 날짜를 라벨로 가져옴
+                    diaryCtrl.DateOrScheduleChanged += (s, ev) =>
+                    {
+                        currentMonth = diaryCtrl.GetTargetDate();
+                        SyncSmallCalendar();
+                        RefreshAllViews();
+                    };
+
                     content = diaryCtrl;
                     break;
 
