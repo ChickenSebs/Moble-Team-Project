@@ -5,6 +5,10 @@ public sealed class AlarmManager : IDisposable
     private readonly TabControl tabControl;
     private readonly System.Windows.Forms.Timer checkTimer;
     private readonly HashSet<AlarmKey> notifiedSchedules = new();
+
+   // 캘린더 중복 알람 방지
+    private readonly record struct AlarmKey(string ScheduleText, DateTime StartAt);
+
     private bool disposed;
 
     public AlarmManager(TabControl tabControl)
@@ -67,6 +71,9 @@ public sealed class AlarmManager : IDisposable
                         continue;
 
                     var startAt = date.Date.AddHours(schedule.StartHour);
+
+                    var key = new AlarmKey(schedule.Text, startAt);
+
                     var key = new AlarmKey(schedule.Id, startAt);
                     activeKeys.Add(key);
 
@@ -138,5 +145,9 @@ public sealed class AlarmManager : IDisposable
             throw new ObjectDisposedException(nameof(AlarmManager));
     }
 
+
+    
+
     private readonly record struct AlarmKey(Guid ScheduleId, DateTime StartAt);
+
 }
