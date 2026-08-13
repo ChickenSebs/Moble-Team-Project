@@ -1,0 +1,63 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="Current" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <PropertyGroup />
+  <ItemGroup>
+    <Compile Update="CalendarControl.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
+    <Compile Update="CalendarControl.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
+    <Compile Update="ClassScheduleDialog.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Update="ddayalarm.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Update="DdaySettingForm.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Update="Dialogs\CalendarScheduleEditorDialog.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Update="Dialogs\CalendarScheduleListDialog.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Update="Dialogs\DiaryEntryDialog.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Update="Dialogs\ScheduleColorSettingsDialog.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Update="Dialogs\UserCategoryEditorDialog.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Update="Dialogs\UserCategoryManagerDialog.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Update="DiaryControl.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
+    <Compile Update="Login.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Update="mainForm.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Update="Mypage.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Update="NewDdayForm.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Update="PlannerControl.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
+    <Compile Update="Signup.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Update="Timetable.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
+  </ItemGroup>
+</Project>

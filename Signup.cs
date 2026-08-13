@@ -23,6 +23,7 @@ namespace tap
             string loginId = txtSignupId.Text.Trim();
             string password = txtSignupPassword.Text.Trim();
             string name = txtName.Text.Trim();
+            string email = txtEmail.Text.Trim();
 
             // 1. 입력값 빈칸 검사
             if (string.IsNullOrEmpty(loginId) || string.IsNullOrEmpty(password) || string.IsNullOrEmpty(name))
@@ -57,12 +58,13 @@ namespace tap
                     }
 
                     // 3. DB에 회원 정보 INSERT
-                    string insertQuery = "INSERT INTO user (login_id, pw, name) VALUES (@login_id, @pw, @name)";
+                    string insertQuery = "INSERT INTO user (login_id, pw, name, email) VALUES (@login_id, @pw, @name, @email)";
                     using (MySqlCommand insertCmd = new MySqlCommand(insertQuery, conn))
                     {
                         insertCmd.Parameters.AddWithValue("@login_id", loginId);
                         insertCmd.Parameters.AddWithValue("@pw", password); // ※ 실무에서는 비밀번호 암호화 후 저장 권장
                         insertCmd.Parameters.AddWithValue("@name", name);
+                        insertCmd.Parameters.AddWithValue("@email", email);
 
                         int result = insertCmd.ExecuteNonQuery();
 

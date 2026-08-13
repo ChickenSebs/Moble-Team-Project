@@ -19,6 +19,7 @@ internal sealed class CalendarMonthCellRenderer
         DateTime date,
         string? holidayName,
         IReadOnlyList<CalendarScheduleEntry> schedules,
+        
         Font baseFont,
         Color dateColor,
         bool isSelected)
@@ -27,6 +28,7 @@ internal sealed class CalendarMonthCellRenderer
         graphics.SmoothingMode = SmoothingMode.AntiAlias;
 
         DrawDate(graphics, bounds, date, baseFont, dateColor);
+        
 
         var scheduleTop = bounds.Top + 25;
         if (!string.IsNullOrWhiteSpace(holidayName))
@@ -56,6 +58,7 @@ internal sealed class CalendarMonthCellRenderer
             color,
             TextFormatFlags.Left | TextFormatFlags.VerticalCenter | TextFormatFlags.NoPadding);
     }
+    
 
     private static void DrawHoliday(
         Graphics graphics,

@@ -1,12 +1,13 @@
 using System.ComponentModel;
-using System.Text.Json;
+using calendar4.Services;
 
 namespace calendar4;
 
 public partial class Timetable : UserControl
 {
     private readonly List<ClassSchedule> schedules = new();
-    private readonly TimetableRepository scheduleRepository;
+    private readonly int loggedInUserId;
+    private readonly TimetableDbRepository timetableDbRepository = new();
     private readonly TimetableScheduleService scheduleService = new();
 
     public Timetable() : this(0)
@@ -16,9 +17,8 @@ public partial class Timetable : UserControl
     public Timetable(int userId)
     {
         InitializeComponent();
-        var fileName = userId > 0 ? $"timetable_{userId}.json" : "timetable.json";
-        scheduleRepository = new TimetableRepository(
-            Path.Combine(Application.LocalUserAppDataPath, fileName));
+
+        loggedInUserId = userId;
 
         if (LicenseManager.UsageMode == LicenseUsageMode.Designtime)
             return;
@@ -39,6 +39,7 @@ public partial class Timetable : UserControl
     private void BtnAddClass_Click(object? sender, EventArgs e)
     {
         using var dialog = new ClassScheduleDialog();
+
         if (dialog.ShowDialog(this) != DialogResult.OK)
             return;
 
@@ -48,36 +49,93 @@ public partial class Timetable : UserControl
             return;
         }
 
-        schedules.Add(dialog.Schedule);
-        SaveAndRender();
+        try
+        {
+            int newId =
+                timetableDbRepository.Add(
+                    loggedInUserId,
+                    dialog.Schedule);
+
+            dialog.Schedule.TimetableId = newId;
+
+            schedules.Add(dialog.Schedule);
+
+            RenderSchedules();
+        }
+        catch (Exception ex)
+        {
+            MessageBox.Show(
+                $"시간표를 DB에 저장하지 못했습니다.\n\n{ex.Message}",
+                "DB 저장 오류",
+                MessageBoxButtons.OK,
+                MessageBoxIcon.Error);
+        }
     }
 
     private void EditSchedule(ClassSchedule schedule)
     {
         using var dialog = new ClassScheduleDialog(schedule);
+
         var result = dialog.ShowDialog(this);
 
-        if (result == DialogResult.Yes)
+        try
         {
-            schedules.RemoveAll(item => item.Id == schedule.Id);
-            SaveAndRender();
-            return;
+            // 삭제
+            if (result == DialogResult.Yes)
+            {
+                timetableDbRepository.Delete(
+                    loggedInUserId,
+                    schedule);
+
+                schedules.RemoveAll(
+                    item => item.Id == schedule.Id);
+
+                RenderSchedules();
+                return;
+            }
+
+            if (result != DialogResult.OK)
+                return;
+
+            if (scheduleService.HasTimeConflict(
+                schedules,
+                dialog.Schedule,
+                schedule.Id))
+            {
+                ShowTimeConflictMessage();
+                return;
+            }
+
+            // 기존 DB ID 유지
+            dialog.Schedule.TimetableId =
+                schedule.TimetableId;
+
+            timetableDbRepository.Update(
+                loggedInUserId,
+                dialog.Schedule);
+
+            var index =
+                schedules.FindIndex(
+                    item => item.Id == schedule.Id);
+
+            if (index >= 0)
+            {
+                schedules[index] =
+                    dialog.Schedule;
+            }
+
+            RenderSchedules();
         }
-
-        if (result != DialogResult.OK)
-            return;
-
-        if (scheduleService.HasTimeConflict(schedules, dialog.Schedule, schedule.Id))
+        catch (Exception ex)
         {
-            ShowTimeConflictMessage();
-            return;
-        }
+            MessageBox.Show(
+                $"시간표를 DB에 반영하지 못했습니다.\n\n{ex.Message}",
+                "DB 저장 오류",
+                MessageBoxButtons.OK,
+                MessageBoxIcon.Error);
 
-        var index = schedules.FindIndex(item => item.Id == schedule.Id);
-        if (index >= 0)
-        {
-            schedules[index] = dialog.Schedule;
-            SaveAndRender();
+            LoadSchedules();
+            RenderSchedules();
         }
     }
 
@@ -88,12 +146,6 @@ public partial class Timetable : UserControl
             "시간 중복",
             MessageBoxButtons.OK,
             MessageBoxIcon.Warning);
-    }
-
-    private void SaveAndRender()
-    {
-        SaveSchedules();
-        RenderSchedules();
     }
 
     private void RenderSchedules()
@@ -306,39 +358,24 @@ public partial class Timetable : UserControl
         ClearTodayClassList();
     }
 
-    private void SaveSchedules()
-    {
-        try
-        {
-            scheduleRepository.Save(schedules);
-        }
-        catch (IOException ex)
-        {
-            MessageBox.Show($"시간표를 저장하지 못했습니다.\r\n{ex.Message}", "저장 오류",
-                MessageBoxButtons.OK, MessageBoxIcon.Error);
-        }
-        catch (UnauthorizedAccessException ex)
-        {
-            MessageBox.Show($"시간표 파일에 접근할 수 없습니다.\r\n{ex.Message}", "저장 오류",
-                MessageBoxButtons.OK, MessageBoxIcon.Error);
-        }
-    }
-
     private void LoadSchedules()
     {
         try
         {
-            schedules.AddRange(scheduleRepository.Load().Where(scheduleService.IsValid));
+            schedules.Clear();
+
+            schedules.AddRange(
+                timetableDbRepository
+                    .Load(loggedInUserId)
+                    .Where(scheduleService.IsValid));
         }
-        catch (JsonException)
+        catch (Exception ex)
         {
-            MessageBox.Show("저장된 시간표 파일이 손상되어 불러올 수 없습니다.", "불러오기 오류",
-                MessageBoxButtons.OK, MessageBoxIcon.Warning);
-        }
-        catch (IOException ex)
-        {
-            MessageBox.Show($"시간표를 불러오지 못했습니다.\r\n{ex.Message}", "불러오기 오류",
-                MessageBoxButtons.OK, MessageBoxIcon.Warning);
+            MessageBox.Show(
+                $"시간표를 DB에서 불러오지 못했습니다.\n\n{ex.Message}",
+                "DB 불러오기 오류",
+                MessageBoxButtons.OK,
+                MessageBoxIcon.Warning);
         }
     }
 

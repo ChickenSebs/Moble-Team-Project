@@ -48,6 +48,8 @@
             btn_exit = new Button();
             btn_search = new Button();
             btnMy = new Button();
+            btn_Dday = new Button();
+            lb_Dday = new Label();
             menuStrip1.SuspendLayout();
             tabPage1.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)dgvCalendar).BeginInit();
@@ -59,7 +61,7 @@
             menuStrip1.Items.AddRange(new ToolStripItem[] { tool_back, tool_con });
             menuStrip1.Location = new Point(0, 0);
             menuStrip1.Name = "menuStrip1";
-            menuStrip1.Size = new Size(1077, 24);
+            menuStrip1.Size = new Size(1315, 24);
             menuStrip1.TabIndex = 0;
             menuStrip1.Text = "menuStrip1";
             // 
@@ -212,11 +214,34 @@
             btnMy.UseVisualStyleBackColor = true;
             btnMy.Click += btnMy_Click;
             // 
+            // btn_Dday
+            // 
+            btn_Dday.Location = new Point(1220, 42);
+            btn_Dday.Name = "btn_Dday";
+            btn_Dday.Size = new Size(83, 30);
+            btn_Dday.TabIndex = 8;
+            btn_Dday.Text = "설정";
+            btn_Dday.UseVisualStyleBackColor = true;
+            btn_Dday.Click += btn_Dday_Click;
+            // 
+            // lb_Dday
+            // 
+            lb_Dday.AutoSize = true;
+            lb_Dday.BackColor = Color.Transparent;
+            lb_Dday.Font = new Font("맑은 고딕", 12.75F, FontStyle.Bold, GraphicsUnit.Point);
+            lb_Dday.Location = new Point(1077, 43);
+            lb_Dday.Name = "lb_Dday";
+            lb_Dday.Size = new Size(125, 23);
+            lb_Dday.TabIndex = 9;
+            lb_Dday.Text = "[ D-Day 없음 ]";
+            // 
             // mainForm
             // 
             AutoScaleDimensions = new SizeF(7F, 15F);
             AutoScaleMode = AutoScaleMode.Font;
-            ClientSize = new Size(1077, 603);
+            ClientSize = new Size(1315, 603);
+            Controls.Add(lb_Dday);
+            Controls.Add(btn_Dday);
             Controls.Add(lbmain_title);
             Controls.Add(tb_search);
             Controls.Add(btn_search);
@@ -263,5 +288,7 @@
         private ToolStripMenuItem tool_day;
         private ToolStripMenuItem tool_image;
         private Button btnMy;
+        private Button btn_Dday;
+        private Label lb_Dday;
     }
 }

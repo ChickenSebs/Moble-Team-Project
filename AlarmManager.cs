@@ -75,7 +75,7 @@ public sealed class AlarmManager : IDisposable
                         continue;
 
                     notifiedSchedules.Add(key);
-                    ShowAlarm(tab.Text, schedule, startAt);
+                    ShowAlarm(tab.Text, schedule, startAt, now);
                 }
             }
         }
@@ -84,14 +84,38 @@ public sealed class AlarmManager : IDisposable
     }
 
     private static void ShowAlarm(
-        string calendarName,
-        CalendarScheduleEntry schedule,
-        DateTime startAt)
+    string calendarName,
+    CalendarScheduleEntry schedule,
+    DateTime startAt,
+    DateTime now)
     {
-        var title = string.IsNullOrWhiteSpace(calendarName)
-            ? "일정 알림"
-            : $"{calendarName} 알림";
-        var message = $"{startAt:HH:mm}  {schedule.Text}\n{FormatOffset(schedule.NotificationOffset)} 뒤에 일정이 시작됩니다.";
+        var title =
+            string.IsNullOrWhiteSpace(calendarName)
+                ? "일정 알림"
+                : $"{calendarName} 알림";
+
+        TimeSpan remainingTime =
+            startAt - now;
+
+        int totalMinutes =
+            (int)Math.Round(
+                remainingTime.TotalMinutes);
+
+        string timeString;
+
+        if (totalMinutes > 0)
+        {
+            timeString =
+                $"{FormatOffset(totalMinutes)} 뒤에";
+        }
+        else
+        {
+            timeString = "곧";
+        }
+
+        var message =
+            $"{startAt:HH:mm}  {schedule.Text}\n" +
+            $"{timeString} 일정이 시작됩니다.";
 
         new ddayalarm(title, message).Show();
     }
