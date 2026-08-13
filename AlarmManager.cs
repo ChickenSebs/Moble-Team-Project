@@ -74,7 +74,6 @@ public sealed class AlarmManager : IDisposable
 
                     var key = new AlarmKey(schedule.Text, startAt);
 
-                    var key = new AlarmKey(schedule.Id, startAt);
                     activeKeys.Add(key);
 
                     var notifyAt = startAt.AddMinutes(-schedule.NotificationOffset);
@@ -148,6 +147,5 @@ public sealed class AlarmManager : IDisposable
 
     
 
-    private readonly record struct AlarmKey(Guid ScheduleId, DateTime StartAt);
 
 }
