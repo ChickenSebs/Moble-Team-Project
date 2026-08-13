@@ -1,10 +1,9 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Drawing;
-using System.IO;
 using System.Reflection;
-using System.Text.Json;
 using System.Windows.Forms;
+using calendar4.Services;
 
 namespace calendar4
 {
@@ -12,36 +11,55 @@ namespace calendar4
     {
         private DateTime currentDate = DateTime.Today;
         private Dictionary<string, PlannerData> plannerMap = new Dictionary<string, PlannerData>();
-        private readonly string plannerSaveFilePath = "saved_planners.json";
+        private readonly int loggedInUserId;
+        private readonly PlannerDbRepository plannerDbRepository = new();
         private bool isLoading = false;
 
-        public PlannerControl()
+        public PlannerControl(int userId)
         {
+            loggedInUserId = userId;
             InitializeComponent();
         }
 
         private void PlannerControl_Load(object sender, EventArgs e)
         {
-            try
-            {
-                if (File.Exists(plannerSaveFilePath))
-                {
-                    File.Delete(plannerSaveFilePath);
-                }
-            }
-            catch { }
-
             // 체크리스트 파란색 선택 하이라이트 방지 설정
             if (dgvTodoList != null)
             {
                 dgvTodoList.CellPainting -= DgvTodoList_CellPainting;
                 dgvTodoList.CellPainting += DgvTodoList_CellPainting;
-                dgvTodoList.DefaultCellStyle.SelectionBackColor = dgvTodoList.DefaultCellStyle.BackColor;
-                dgvTodoList.DefaultCellStyle.SelectionForeColor = dgvTodoList.DefaultCellStyle.ForeColor;
+
+                dgvTodoList.DefaultCellStyle.SelectionBackColor =
+                    dgvTodoList.DefaultCellStyle.BackColor;
+
+                dgvTodoList.DefaultCellStyle.SelectionForeColor =
+                    dgvTodoList.DefaultCellStyle.ForeColor;
             }
 
             InitTimeTableGrid();
-            ClearPlannerScreen();
+
+            try
+            {
+                // 로그인한 사용자의 플래너 전체 조회
+                plannerMap =
+                    plannerDbRepository.Load(loggedInUserId);
+
+                // 오늘 날짜 데이터 표시
+                LoadPlannerDate(currentDate);
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show(
+                    $"플래너를 DB에서 불러오지 못했습니다.\n\n{ex.Message}",
+                    "DB 불러오기 오류",
+                    MessageBoxButtons.OK,
+                    MessageBoxIcon.Error);
+
+                plannerMap =
+                    new Dictionary<string, PlannerData>();
+
+                ClearPlannerScreen();
+            }
         }
 
         public void SetDate(DateTime date)
@@ -577,21 +595,29 @@ namespace calendar4
             }
 
             if (data.Tasks.Count > 0 || data.TimeSlots.Count > 0)
+            {
                 plannerMap[key] = data;
+            }
             else
+            {
                 plannerMap.Remove(key);
+            }
 
-            SavePlanners();
-        }
-
-        private void SavePlanners()
-        {
             try
             {
-                string json = JsonSerializer.Serialize(plannerMap, new JsonSerializerOptions { WriteIndented = true });
-                File.WriteAllText(plannerSaveFilePath, json);
+                plannerDbRepository.Save(
+                    loggedInUserId,
+                    currentDate,
+                    data);
             }
-            catch { }
+            catch (Exception ex)
+            {
+                MessageBox.Show(
+                    $"플래너를 DB에 저장하지 못했습니다.\n\n{ex.Message}",
+                    "DB 저장 오류",
+                    MessageBoxButtons.OK,
+                    MessageBoxIcon.Error);
+            }
         }
 
         protected override void OnHandleDestroyed(EventArgs e)

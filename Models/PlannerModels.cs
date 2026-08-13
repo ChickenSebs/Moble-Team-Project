@@ -15,8 +15,16 @@ public sealed class PlannerTask
 public sealed class PlannerTimeSlot
 {
     public int Hour { get; set; }
+
+    public int StartMinute { get; set; }
+
+    public int EndMinute { get; set; }
+
     public string TaskName { get; set; } = string.Empty;
+
     public int R { get; set; }
+
     public int G { get; set; }
+
     public int B { get; set; }
 }

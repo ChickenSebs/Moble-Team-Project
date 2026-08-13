@@ -45,6 +45,7 @@ namespace calendar4
             InitCalendarViewOptions();
             InitUIStyleEvents();
 
+
             // ✨ 수정됨: 오류가 발생하던 고정 컨트롤 이벤트 연결 코드를 삭제했습니다.
             // (대신 CreateTabPage 메서드에서 동적으로 연결합니다.)
         }
@@ -112,7 +113,10 @@ namespace calendar4
         {
             alarmManager?.Dispose();
             SaveTabs();
+
             Application.Exit();
+
+
         }
 
         private void InitUIStyleEvents()
@@ -297,6 +301,13 @@ namespace calendar4
                     calCtrl.SetHolidayMap(holidayMap);
                     calCtrl.SetTargetDate(currentMonth);
                 }
+
+
+                else if (tab.Controls[0] is PlannerControl plannerCtrl)
+                {
+                    plannerCtrl.SetDate(currentMonth);
+                }
+
             }
 
             UpdateSummaryView();
@@ -581,11 +592,16 @@ namespace calendar4
             switch (type)
             {
                 case TabType.Diary:
+
                     var diaryCtrl = new DiaryControl
+
+                    var diaryCtrl = new DiaryControl(loggedInUserId)
+
                     {
                         Dock = DockStyle.Fill
                     };
                     diaryCtrl.DataChanged += (s, ev) => UpdateSummaryView();
+
 
                     // 0813 수정 바뀐 날짜를 라벨로 가져옴
                     diaryCtrl.DateOrScheduleChanged += (s, ev) =>
@@ -595,11 +611,16 @@ namespace calendar4
                         RefreshAllViews();
                     };
 
+
                     content = diaryCtrl;
                     break;
 
                 case TabType.Planner:
+
                     content = new PlannerControl
+
+                    content = new PlannerControl(loggedInUserId)
+
                     {
                         Dock = DockStyle.Fill
                     };
@@ -623,7 +644,11 @@ namespace calendar4
 
                 case TabType.Calendar:
                 default:
+
                     var calCtrl = new CalendarControl
+
+                    var calCtrl = new CalendarControl(loggedInUserId)
+
                     {
                         Dock = DockStyle.Fill
                     };
