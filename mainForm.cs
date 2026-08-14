@@ -1208,16 +1208,17 @@ namespace calendar4
                     calCtrl.SetHolidayMap(
                         holidayMap);
 
-                    calCtrl.DateOrScheduleChanged +=
-                        (s, ev) =>
-                        {
-                            currentMonth =
-                                calCtrl.GetTargetDate();
+                    calCtrl.DateOrScheduleChanged += (s, ev) =>
+                    {
+                        currentMonth = calCtrl.GetTargetDate();
 
-                            SyncSmallCalendar();
+                        SyncSmallCalendar();
 
-                            RefreshAllViews();
-                        };
+                        RefreshAllViews();
+
+                        // ★ 일정 삭제 후 D-day 상태도 다시 확인
+                        RefreshDdayLabel();
+                    };
 
                     content =
                         calCtrl;
@@ -1705,6 +1706,18 @@ namespace calendar4
                     "DB 오류",
                     MessageBoxButtons.OK,
                     MessageBoxIcon.Error);
+            }
+        }
+        private void RefreshDdayLabel()
+        {
+            var repository = new CalendarDbRepository();
+
+            var ddayMap =
+                repository.LoadDdays(loggedInUserId);
+
+            if (ddayMap.Count == 0)
+            {
+                lbDday.Text = "D-Day 없음";
             }
         }
 

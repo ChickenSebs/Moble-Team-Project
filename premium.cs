@@ -49,6 +49,16 @@ namespace calendar4
             timer1.Interval = 30; // 30ms * 100회 = 3000ms (3초)
             timer1.Tick -= Timer1_Tick; // 중복 연결 방지 후 등록
             timer1.Tick += Timer1_Tick;
+            if (IsAlreadyPremium())
+            {
+                btn_pay.Enabled = false;
+
+                MessageBox.Show(
+                    "이미 프리미엄 회원입니다.",
+                    "프리미엄",
+                    MessageBoxButtons.OK,
+                    MessageBoxIcon.Information);
+            }
         }
 
         private void cb_pay_SelectedIndexChanged(object sender, EventArgs e)
@@ -83,10 +93,27 @@ namespace calendar4
 
         private void btn_pay_Click(object sender, EventArgs e)
         {
-            // 콤보박스 체크
-            if (cb_pay.SelectedItem == null || cb_select.SelectedItem == null)
+            if (IsAlreadyPremium())
             {
-                MessageBox.Show("결제방법을 선택해주세요.", "알림", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                MessageBox.Show(
+                    "이미 프리미엄 회원입니다.",
+                    "프리미엄",
+                    MessageBoxButtons.OK,
+                    MessageBoxIcon.Information);
+
+                return;
+            }
+
+            // 2. 결제방법 선택 확인
+            if (cb_pay.SelectedItem == null ||
+                cb_select.SelectedItem == null)
+            {
+                MessageBox.Show(
+                    "결제방법을 선택해주세요.",
+                    "알림",
+                    MessageBoxButtons.OK,
+                    MessageBoxIcon.Warning);
+
                 return;
             }
 
@@ -94,10 +121,8 @@ namespace calendar4
             cb_pay.Enabled = false;
             cb_select.Enabled = false;
 
-            // 로딩 창 생성
             CreateLoadingForm();
 
-            // 도구상자의 timer1 실행
             progressValue = 0;
             progressBar1.Value = 0;
             timer1.Start();
@@ -179,6 +204,49 @@ namespace calendar4
 
             loadingForm.Controls.Add(lblMessage);
             loadingForm.Controls.Add(progressBar1);
+        }
+        private bool IsAlreadyPremium()
+        {
+            string connStr =
+                "Server=localhost;Database=teamproject;Uid=root;Pwd=1111;";
+
+            string query =
+                "SELECT premium FROM user WHERE user_id = @userId";
+
+            using (MySqlConnection conn = new MySqlConnection(connStr))
+            {
+                try
+                {
+                    conn.Open();
+
+                    using (MySqlCommand cmd = new MySqlCommand(query, conn))
+                    {
+                        cmd.Parameters.AddWithValue(
+                            "@userId",
+                            loggedInUserId);
+
+                        object result = cmd.ExecuteScalar();
+
+                        if (result == null || result == DBNull.Value)
+                            return false;
+
+                        int premiumValue =
+                            Convert.ToInt32(result);
+
+                        return premiumValue == 1;
+                    }
+                }
+                catch (Exception ex)
+                {
+                    MessageBox.Show(
+                        "프리미엄 정보 확인 중 오류 발생: " + ex.Message,
+                        "오류",
+                        MessageBoxButtons.OK,
+                        MessageBoxIcon.Error);
+
+                    return false;
+                }
+            }
         }
         private bool UpdatePremiumStatus()
         {

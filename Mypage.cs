@@ -184,9 +184,62 @@ namespace calendar4
 
         private void btnPremium_Click(object sender, EventArgs e)
         {
-            premium premiumForm = new premium(loggedInUserId);
+            // 이미 프리미엄 회원인지 DB에서 확인
+            string connStr =
+                "Server=localhost;Database=teamproject;Uid=root;Pwd=1111;";
+
+            string query =
+                "SELECT premium FROM user WHERE user_id = @userId";
+
+            using (MySqlConnection conn = new MySqlConnection(connStr))
+            {
+                try
+                {
+                    conn.Open();
+
+                    using (MySqlCommand cmd = new MySqlCommand(query, conn))
+                    {
+                        cmd.Parameters.AddWithValue(
+                            "@userId",
+                            loggedInUserId);
+
+                        object result = cmd.ExecuteScalar();
+
+                        if (result != null &&
+                            result != DBNull.Value &&
+                            Convert.ToInt32(result) == 1)
+                        {
+                            MessageBox.Show(
+                                "이미 프리미엄 회원입니다.",
+                                "프리미엄",
+                                MessageBoxButtons.OK,
+                                MessageBoxIcon.Information);
+
+                            // 여기서 끝내기
+                            // 아래 premium 폼은 열리지 않음
+                            return;
+                        }
+                    }
+                }
+                catch (Exception ex)
+                {
+                    MessageBox.Show(
+                        "프리미엄 상태 확인 중 오류 발생: " + ex.Message,
+                        "오류",
+                        MessageBoxButtons.OK,
+                        MessageBoxIcon.Error);
+
+                    return;
+                }
+            }
+
+            // premium = 0인 일반 회원일 때만 결제 폼 열기
+            premium premiumForm =
+                new premium(loggedInUserId);
+
             premiumForm.ShowDialog(this);
 
+            // 결제하고 돌아오면 마이페이지 표시 갱신
             LoadPremiumStatus();
         }
 

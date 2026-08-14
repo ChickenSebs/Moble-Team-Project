@@ -657,17 +657,6 @@ namespace calendar4
                     ? new List<CalendarScheduleEntry>()
                     : schedules.ToList();
 
-            if (!string.IsNullOrWhiteSpace(ddayText))
-            {
-                displaySchedules.Add(
-                    new CalendarScheduleEntry
-                    {
-                        Text = $"D-day {ddayText}",
-                        StartHour = 8,
-                        EndHour = 9
-                    });
-            }
-
             monthCellRenderer.Draw(
                 e.Graphics,
                 e.CellBounds,
@@ -732,12 +721,13 @@ namespace calendar4
 
                     if (!stillExists)
                     {
+                        // 일반 일정 삭제
                         calendarDbRepository.Delete(
                             loggedInUserId,
                             original);
-                        if (ddayMap.TryGetValue(
-                            keyDate,
-                            out var ddayTitle) &&
+
+                        // 이 일정이 현재 D-day라면 D-day도 같이 삭제
+                        if (ddayMap.TryGetValue(keyDate, out var ddayTitle) &&
                             ddayTitle == original.Text)
                         {
                             calendarDbRepository.DeleteDday(

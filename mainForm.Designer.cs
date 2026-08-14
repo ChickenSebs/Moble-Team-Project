@@ -67,7 +67,7 @@
             menuStrip1.Items.AddRange(new ToolStripItem[] { tool_back, tool_con });
             menuStrip1.Location = new Point(0, 0);
             menuStrip1.Name = "menuStrip1";
-            menuStrip1.Size = new Size(1315, 24);
+            menuStrip1.Size = new Size(1076, 24);
             menuStrip1.TabIndex = 0;
             menuStrip1.Text = "menuStrip1";
             // 
@@ -176,7 +176,7 @@
             // 
             richTextBox1.Location = new Point(9, 227);
             richTextBox1.Name = "richTextBox1";
-            richTextBox1.Size = new Size(220, 365);
+            richTextBox1.Size = new Size(220, 372);
             richTextBox1.TabIndex = 2;
             richTextBox1.Text = "";
             // 
@@ -193,7 +193,7 @@
             lbmain_title.AutoSize = true;
             lbmain_title.BackColor = Color.Transparent;
             lbmain_title.Font = new Font("맑은 고딕", 24F, FontStyle.Bold, GraphicsUnit.Point);
-            lbmain_title.Location = new Point(575, 25);
+            lbmain_title.Location = new Point(583, 27);
             lbmain_title.Name = "lbmain_title";
             lbmain_title.Size = new Size(112, 45);
             lbmain_title.TabIndex = 7;
@@ -264,17 +264,17 @@
             // 
             lbDday.AutoSize = true;
             lbDday.Font = new Font("맑은 고딕", 12F, FontStyle.Bold, GraphicsUnit.Point);
-            lbDday.Location = new Point(1091, 45);
+            lbDday.Location = new Point(250, 38);
             lbDday.Name = "lbDday";
-            lbDday.Size = new Size(121, 21);
+            lbDday.Size = new Size(97, 21);
             lbDday.TabIndex = 8;
-            lbDday.Text = "[ D-Day 없음 ]";
+            lbDday.Text = "D-Day 없음";
             // 
             // btn_Dday
             // 
-            btn_Dday.Location = new Point(1228, 42);
+            btn_Dday.Location = new Point(353, 35);
             btn_Dday.Name = "btn_Dday";
-            btn_Dday.Size = new Size(75, 30);
+            btn_Dday.Size = new Size(66, 30);
             btn_Dday.TabIndex = 9;
             btn_Dday.Text = "설정";
             btn_Dday.UseVisualStyleBackColor = true;
@@ -284,7 +284,7 @@
             // 
             AutoScaleDimensions = new SizeF(7F, 15F);
             AutoScaleMode = AutoScaleMode.Font;
-            ClientSize = new Size(1315, 603);
+            ClientSize = new Size(1076, 603);
             Controls.Add(btn_Dday);
             Controls.Add(lbDday);
             Controls.Add(lbmain_title);
