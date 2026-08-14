@@ -72,8 +72,14 @@ namespace calendar4
                 ClearPlannerScreen();
             }
 
+            // 형광펜 색상 콤보박스를 현재 테마에 맞게 초기화
+            InitializeHighlightColorCombo();
+
             // 현재 선택된 테마 적용
             ApplyCurrentTheme();
+
+            // 현재 선택된 글꼴 적용
+            ApplyCurrentFont();
         }
 
 
@@ -361,15 +367,20 @@ namespace calendar4
                                     e.CellBounds.Height - 2);
 
 
-                            // 사용자가 선택한 형광펜 색은
-                            // 테마와 관계없이 그대로 유지
+                            // DB에 저장된 기존 RGB는 그대로 두고,
+                            // 화면에 표시할 때만 현재 테마의 형광펜 색으로 변환
+                            Color themedHighlight =
+                                GetThemedHighlightColor(
+                                    Color.FromArgb(
+                                        block.R,
+                                        block.G,
+                                        block.B));
+
                             using (SolidBrush brush =
                                    new SolidBrush(
                                        Color.FromArgb(
                                            200,
-                                           block.R,
-                                           block.G,
-                                           block.B)))
+                                           themedHighlight)))
                             {
                                 e.Graphics.FillRectangle(
                                     brush,
@@ -562,83 +573,22 @@ namespace calendar4
             }
 
 
-            Color highlightColor =
-                Color.FromArgb(
-                    244,
-                    180,
-                    190);
-
-
-            string selectedText =
+            // 콤보박스의 0~4 인덱스를 기준으로
+            // DB에는 기존 5색 RGB를 저장한다.
+            int selectedColorIndex =
                 cbColorPicker != null
-                    ? cbColorPicker.SelectedItem?.ToString()
-                      ?? cbColorPicker.Text
-                    : "";
+                    ? cbColorPicker.SelectedIndex
+                    : 0;
 
-
-            selectedText =
-                selectedText
-                    .Replace(" ", "")
-                    .Trim();
-
-
-            if (
-                selectedText.Contains("핑크") ||
-                selectedText.Contains("분홍"))
+            if (selectedColorIndex < 0 ||
+                selectedColorIndex > 4)
             {
-                highlightColor =
-                    Color.FromArgb(
-                        244,
-                        180,
-                        190);
+                selectedColorIndex = 0;
             }
 
-            else if (
-                selectedText.Contains("노랑") ||
-                selectedText.Contains("노란") ||
-                selectedText.Contains("옐로우"))
-            {
-                highlightColor =
-                    Color.FromArgb(
-                        250,
-                        220,
-                        150);
-            }
-
-            else if (
-                selectedText.Contains("연두") ||
-                selectedText.Contains("초록") ||
-                selectedText.Contains("그린"))
-            {
-                highlightColor =
-                    Color.FromArgb(
-                        170,
-                        215,
-                        175);
-            }
-
-            else if (
-                selectedText.Contains("하늘") ||
-                selectedText.Contains("파랑") ||
-                selectedText.Contains("블루"))
-            {
-                highlightColor =
-                    Color.FromArgb(
-                        165,
-                        205,
-                        235);
-            }
-
-            else if (
-                selectedText.Contains("보라") ||
-                selectedText.Contains("퍼플"))
-            {
-                highlightColor =
-                    Color.FromArgb(
-                        215,
-                        185,
-                        225);
-            }
+            Color highlightColor =
+                GetBaseHighlightColor(
+                    selectedColorIndex);
 
 
             string selectedTask =
@@ -1472,6 +1422,9 @@ namespace calendar4
 
                 cbColorPicker.ForeColor =
                     UiThemeService.TextColor;
+
+                // 테마가 바뀌면 형광펜 이름과 미리보기 색도 즉시 갱신
+                RefreshHighlightColorCombo();
             }
 
 
@@ -1500,6 +1453,464 @@ namespace calendar4
 
             // 화면 다시 그리기
             Invalidate();
+        }
+
+
+        // ============================================================
+        // 현재 선택된 글꼴을 플래너에 적용
+        // ============================================================
+        public void ApplyCurrentFont()
+        {
+            SuspendLayout();
+
+            try
+            {
+                if (dgvTodoList != null)
+                {
+                    dgvTodoList.DefaultCellStyle.Font =
+                        AppFontService.CreateFont(
+                            dgvTodoList.DefaultCellStyle.Font?.Size ?? 9F,
+                            dgvTodoList.DefaultCellStyle.Font?.Style
+                                ?? FontStyle.Regular);
+
+                    dgvTodoList.ColumnHeadersDefaultCellStyle.Font =
+                        AppFontService.CreateFont(
+                            dgvTodoList.ColumnHeadersDefaultCellStyle.Font?.Size ?? 9F,
+                            dgvTodoList.ColumnHeadersDefaultCellStyle.Font?.Style
+                                ?? FontStyle.Bold);
+
+                    dgvTodoList.Invalidate();
+                }
+
+                if (dgvTimeTable != null)
+                {
+                    dgvTimeTable.Font =
+                        AppFontService.CreateFont(
+                            dgvTimeTable.Font.Size,
+                            dgvTimeTable.Font.Style);
+
+                    dgvTimeTable.DefaultCellStyle.Font =
+                        AppFontService.CreateFont(
+                            dgvTimeTable.DefaultCellStyle.Font?.Size ?? 9F,
+                            dgvTimeTable.DefaultCellStyle.Font?.Style
+                                ?? FontStyle.Regular);
+
+                    dgvTimeTable.Invalidate();
+                }
+
+                if (txtTaskInput != null)
+                {
+                    Rectangle oldBounds = txtTaskInput.Bounds;
+
+                    txtTaskInput.Font =
+                        AppFontService.CreateFont(
+                            txtTaskInput.Font.Size,
+                            txtTaskInput.Font.Style);
+
+                    txtTaskInput.Bounds = oldBounds;
+                }
+
+                if (cbTaskList != null)
+                {
+                    Rectangle oldBounds = cbTaskList.Bounds;
+
+                    cbTaskList.Font =
+                        AppFontService.CreateFont(
+                            cbTaskList.Font.Size,
+                            cbTaskList.Font.Style);
+
+                    cbTaskList.Bounds = oldBounds;
+                }
+
+                if (cbColorPicker != null)
+                {
+                    Rectangle oldBounds = cbColorPicker.Bounds;
+
+                    cbColorPicker.Font =
+                        AppFontService.CreateFont(
+                            cbColorPicker.Font.Size,
+                            cbColorPicker.Font.Style);
+
+                    cbColorPicker.Bounds = oldBounds;
+                }
+
+                if (dtpStart != null)
+                {
+                    Rectangle oldBounds = dtpStart.Bounds;
+
+                    dtpStart.Font =
+                        AppFontService.CreateFont(
+                            dtpStart.Font.Size,
+                            dtpStart.Font.Style);
+
+                    dtpStart.Bounds = oldBounds;
+                }
+
+                if (dtpEnd != null)
+                {
+                    Rectangle oldBounds = dtpEnd.Bounds;
+
+                    dtpEnd.Font =
+                        AppFontService.CreateFont(
+                            dtpEnd.Font.Size,
+                            dtpEnd.Font.Style);
+
+                    dtpEnd.Bounds = oldBounds;
+                }
+
+                Invalidate();
+            }
+            finally
+            {
+                ResumeLayout(false);
+            }
+        }
+
+
+        // ============================================================
+        // 형광펜 색상 콤보박스 초기화
+        // ============================================================
+        private void InitializeHighlightColorCombo()
+        {
+            if (cbColorPicker == null)
+                return;
+
+            cbColorPicker.DrawMode =
+                DrawMode.OwnerDrawFixed;
+
+            cbColorPicker.DropDownStyle =
+                ComboBoxStyle.DropDownList;
+
+            cbColorPicker.DrawItem -=
+                CbColorPicker_DrawItem;
+
+            cbColorPicker.DrawItem +=
+                CbColorPicker_DrawItem;
+
+            RefreshHighlightColorCombo();
+        }
+
+
+        // ============================================================
+        // 현재 테마에 맞춰 형광펜 선택 항목 갱신
+        // ============================================================
+        private void RefreshHighlightColorCombo()
+        {
+            if (cbColorPicker == null)
+                return;
+
+            int oldIndex =
+                cbColorPicker.SelectedIndex;
+
+            if (oldIndex < 0 ||
+                oldIndex > 4)
+            {
+                oldIndex = 0;
+            }
+
+            string[] names =
+                GetHighlightColorNames();
+
+            cbColorPicker.BeginUpdate();
+
+            try
+            {
+                cbColorPicker.Items.Clear();
+
+                foreach (string name in names)
+                {
+                    cbColorPicker.Items.Add(name);
+                }
+
+                if (cbColorPicker.Items.Count > 0)
+                {
+                    cbColorPicker.SelectedIndex =
+                        Math.Min(
+                            oldIndex,
+                            cbColorPicker.Items.Count - 1);
+                }
+            }
+            finally
+            {
+                cbColorPicker.EndUpdate();
+            }
+
+            cbColorPicker.Invalidate();
+        }
+
+
+        // ============================================================
+        // 형광펜 콤보박스에 색상 미리보기 + 이름 표시
+        // ============================================================
+        private void CbColorPicker_DrawItem(
+            object sender,
+            DrawItemEventArgs e)
+        {
+            if (e.Index < 0 ||
+                cbColorPicker == null)
+            {
+                return;
+            }
+
+            e.DrawBackground();
+
+            Color previewColor =
+                GetThemeHighlightColorByIndex(
+                    e.Index);
+
+            Rectangle colorBox =
+                new Rectangle(
+                    e.Bounds.Left + 5,
+                    e.Bounds.Top + 4,
+                    18,
+                    Math.Max(
+                        10,
+                        e.Bounds.Height - 8));
+
+            using (SolidBrush colorBrush =
+                   new SolidBrush(previewColor))
+            {
+                e.Graphics.FillRectangle(
+                    colorBrush,
+                    colorBox);
+            }
+
+            using (Pen borderPen =
+                   new Pen(GetPlannerGridColor()))
+            {
+                e.Graphics.DrawRectangle(
+                    borderPen,
+                    colorBox);
+            }
+
+            Rectangle textRect =
+                new Rectangle(
+                    colorBox.Right + 7,
+                    e.Bounds.Top,
+                    Math.Max(
+                        1,
+                        e.Bounds.Width -
+                        colorBox.Width - 17),
+                    e.Bounds.Height);
+
+            Color textColor =
+                (e.State & DrawItemState.Selected) != 0
+                    ? SystemColors.HighlightText
+                    : UiThemeService.TextColor;
+
+            TextRenderer.DrawText(
+                e.Graphics,
+                cbColorPicker.Items[e.Index]?.ToString() ?? "",
+                e.Font ?? cbColorPicker.Font,
+                textRect,
+                textColor,
+                TextFormatFlags.Left |
+                TextFormatFlags.VerticalCenter);
+
+            e.DrawFocusRectangle();
+        }
+
+
+        // ============================================================
+        // 테마별 형광펜 표시 이름
+        // ============================================================
+        private string[] GetHighlightColorNames()
+        {
+            return UiThemeService.CurrentTheme switch
+            {
+                AppTheme.Dark =>
+                    new[]
+                    {
+                        "더스티 로즈",
+                        "골드",
+                        "세이지",
+                        "딥 블루",
+                        "뮤트 퍼플"
+                    },
+
+                AppTheme.Blossom =>
+                    new[]
+                    {
+                        "벚꽃 핑크",
+                        "피치 크림",
+                        "새싹 그린",
+                        "봄 하늘",
+                        "라일락"
+                    },
+
+                AppTheme.Mint =>
+                    new[]
+                    {
+                        "민트 크림",
+                        "아이보리",
+                        "민트",
+                        "아쿠아",
+                        "세이지"
+                    },
+
+                AppTheme.Lavender =>
+                    new[]
+                    {
+                        "라일락 핑크",
+                        "바닐라",
+                        "세이지",
+                        "페리윙클",
+                        "라벤더"
+                    },
+
+                AppTheme.Cozy =>
+                    new[]
+                    {
+                        "살구",
+                        "카멜",
+                        "올리브",
+                        "웜 그레이",
+                        "브라운 로즈"
+                    },
+
+                _ =>
+                    new[]
+                    {
+                        "핑크",
+                        "노랑",
+                        "연두",
+                        "하늘",
+                        "보라"
+                    }
+            };
+        }
+
+
+        // ============================================================
+        // DB 저장용 기존 5색 RGB
+        // ============================================================
+        private Color GetBaseHighlightColor(
+            int index)
+        {
+            return index switch
+            {
+                0 => Color.FromArgb(244, 180, 190),
+                1 => Color.FromArgb(250, 220, 150),
+                2 => Color.FromArgb(170, 215, 175),
+                3 => Color.FromArgb(165, 205, 235),
+                4 => Color.FromArgb(215, 185, 225),
+
+                _ => Color.FromArgb(244, 180, 190)
+            };
+        }
+
+
+        // ============================================================
+        // 실제 화면에 사용할 테마별 5색
+        // ============================================================
+        private Color GetThemeHighlightColorByIndex(
+            int index)
+        {
+            return UiThemeService.CurrentTheme switch
+            {
+                AppTheme.Dark => index switch
+                {
+                    0 => Color.FromArgb(183, 105, 132),
+                    1 => Color.FromArgb(190, 158, 82),
+                    2 => Color.FromArgb(103, 158, 122),
+                    3 => Color.FromArgb(92, 139, 177),
+                    4 => Color.FromArgb(143, 112, 177),
+                    _ => GetBaseHighlightColor(index)
+                },
+
+                AppTheme.Blossom => index switch
+                {
+                    0 => Color.FromArgb(247, 174, 196),
+                    1 => Color.FromArgb(250, 218, 174),
+                    2 => Color.FromArgb(205, 225, 190),
+                    3 => Color.FromArgb(196, 214, 235),
+                    4 => Color.FromArgb(221, 190, 228),
+                    _ => GetBaseHighlightColor(index)
+                },
+
+                AppTheme.Mint => index switch
+                {
+                    0 => Color.FromArgb(202, 225, 207),
+                    1 => Color.FromArgb(235, 229, 178),
+                    2 => Color.FromArgb(151, 215, 187),
+                    3 => Color.FromArgb(158, 211, 218),
+                    4 => Color.FromArgb(184, 210, 204),
+                    _ => GetBaseHighlightColor(index)
+                },
+
+                AppTheme.Lavender => index switch
+                {
+                    0 => Color.FromArgb(231, 184, 215),
+                    1 => Color.FromArgb(235, 220, 188),
+                    2 => Color.FromArgb(197, 210, 198),
+                    3 => Color.FromArgb(184, 199, 232),
+                    4 => Color.FromArgb(202, 174, 229),
+                    _ => GetBaseHighlightColor(index)
+                },
+
+                AppTheme.Cozy => index switch
+                {
+                    0 => Color.FromArgb(221, 168, 154),
+                    1 => Color.FromArgb(226, 194, 135),
+                    2 => Color.FromArgb(178, 192, 145),
+                    3 => Color.FromArgb(171, 188, 190),
+                    4 => Color.FromArgb(190, 161, 174),
+                    _ => GetBaseHighlightColor(index)
+                },
+
+                _ =>
+                    GetBaseHighlightColor(index)
+            };
+        }
+
+
+        // ============================================================
+        // DB의 기존 형광펜 RGB를 현재 테마 색으로 변환
+        // ============================================================
+        private Color GetThemedHighlightColor(
+            Color original)
+        {
+            int index =
+                GetHighlightColorIndex(
+                    original);
+
+            if (index < 0)
+                return original;
+
+            return GetThemeHighlightColorByIndex(
+                index);
+        }
+
+
+        private int GetHighlightColorIndex(
+            Color color)
+        {
+            for (int i = 0;
+                 i < 5;
+                 i++)
+            {
+                if (IsNearHighlightColor(
+                    color,
+                    GetBaseHighlightColor(i)))
+                {
+                    return i;
+                }
+            }
+
+            return -1;
+        }
+
+
+        private bool IsNearHighlightColor(
+            Color a,
+            Color b)
+        {
+            const int tolerance = 15;
+
+            return
+                Math.Abs(a.R - b.R) <= tolerance &&
+                Math.Abs(a.G - b.G) <= tolerance &&
+                Math.Abs(a.B - b.B) <= tolerance;
         }
 
 

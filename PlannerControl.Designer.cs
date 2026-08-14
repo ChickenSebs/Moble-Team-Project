@@ -291,8 +291,7 @@
             // 
             // PlannerControl
             // 
-            AutoScaleDimensions = new SizeF(7F, 15F);
-            AutoScaleMode = AutoScaleMode.Font;
+            AutoScaleMode = AutoScaleMode.None;
             Controls.Add(panel2);
             Controls.Add(panel1);
             Name = "PlannerControl";

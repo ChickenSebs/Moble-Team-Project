@@ -115,7 +115,7 @@ internal partial class ClassScheduleDialog : Form
         };
         settingsButton.Click += (_, _) =>
         {
-            using var dialog = new ScheduleColorSettingsDialog();
+            using var dialog = new ScheduleColorSettingsForm();
             dialog.ShowDialog(this);
             RefreshColorPreview();
         };

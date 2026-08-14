@@ -2,6 +2,9 @@
 <Project ToolsVersion="Current" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <PropertyGroup />
   <ItemGroup>
+    <Compile Update="AD.cs">
+      <SubType>Form</SubType>
+    </Compile>
     <Compile Update="CalendarControl.cs">
       <SubType>UserControl</SubType>
     </Compile>
@@ -11,31 +14,31 @@
     <Compile Update="ClassScheduleDialog.cs">
       <SubType>Form</SubType>
     </Compile>
+    <Compile Update="CreateForm\CalenderScheduleListForm.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Update="CreateForm\DiaryEntryForm.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Update="CreateForm\ScheduleColorSettingsForm.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Update="CreateForm\SearchResultsForm.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Update="CreateForm\UserCategoryEditorForm.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Update="CreateForm\UserCategoryManagerForm.cs">
+      <SubType>Form</SubType>
+    </Compile>
     <Compile Update="ddayalarm.cs">
       <SubType>Form</SubType>
     </Compile>
     <Compile Update="DdaySettingForm.cs">
       <SubType>Form</SubType>
     </Compile>
-    <Compile Update="Dialogs\CalendarScheduleEditorDialog.cs">
-      <SubType>Form</SubType>
-    </Compile>
-    <Compile Update="Dialogs\CalendarScheduleListDialog.cs">
-      <SubType>Form</SubType>
-    </Compile>
-    <Compile Update="Dialogs\DiaryEntryDialog.cs">
-      <SubType>Form</SubType>
-    </Compile>
-    <Compile Update="Dialogs\ScheduleColorSettingsDialog.cs">
-      <SubType>Form</SubType>
-    </Compile>
-    <Compile Update="Dialogs\SearchResultsDialog.cs">
-      <SubType>Form</SubType>
-    </Compile>
-    <Compile Update="Dialogs\UserCategoryEditorDialog.cs">
-      <SubType>Form</SubType>
-    </Compile>
-    <Compile Update="Dialogs\UserCategoryManagerDialog.cs">
+    <Compile Update="CreateForm\CalendarScheduleEditorForm.cs">
       <SubType>Form</SubType>
     </Compile>
     <Compile Update="DiaryControl.cs">

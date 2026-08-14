@@ -41,6 +41,7 @@
             label5 = new Label();
             label6 = new Label();
             timer1 = new System.Windows.Forms.Timer(components);
+            label7 = new Label();
             SuspendLayout();
             // 
             // label2
@@ -137,7 +138,7 @@
             label5.AutoSize = true;
             label5.BackColor = Color.Transparent;
             label5.Font = new Font("맑은 고딕", 9.75F, FontStyle.Bold, GraphicsUnit.Point);
-            label5.Location = new Point(146, 306);
+            label5.Location = new Point(146, 284);
             label5.Name = "label5";
             label5.Size = new Size(140, 17);
             label5.TabIndex = 9;
@@ -147,11 +148,22 @@
             // 
             label6.AutoSize = true;
             label6.BackColor = Color.Transparent;
-            label6.Location = new Point(16, 354);
+            label6.Location = new Point(16, 382);
             label6.Name = "label6";
             label6.Size = new Size(400, 15);
             label6.TabIndex = 10;
             label6.Text = "탭 생성, 일정·다이어리 기록 제한 없이 모든 기능을 자유롭게 이용하세요.";
+            // 
+            // label7
+            // 
+            label7.AutoSize = true;
+            label7.BackColor = Color.Transparent;
+            label7.Font = new Font("맑은 고딕", 15.75F, FontStyle.Bold, GraphicsUnit.Point);
+            label7.Location = new Point(165, 323);
+            label7.Name = "label7";
+            label7.Size = new Size(99, 30);
+            label7.TabIndex = 9;
+            label7.Text = "29,900원";
             // 
             // premium
             // 
@@ -161,6 +173,7 @@
             BackgroundImageLayout = ImageLayout.Stretch;
             ClientSize = new Size(428, 576);
             Controls.Add(label6);
+            Controls.Add(label7);
             Controls.Add(label5);
             Controls.Add(label1);
             Controls.Add(cb_select);
@@ -172,6 +185,7 @@
             Controls.Add(label2);
             DoubleBuffered = true;
             Name = "premium";
+            StartPosition = FormStartPosition.CenterScreen;
             Text = "premium";
             Load += premium_Load;
             ResumeLayout(false);
@@ -190,5 +204,6 @@
         private Label label5;
         private Label label6;
         private System.Windows.Forms.Timer timer1;
+        private Label label7;
     }
 }

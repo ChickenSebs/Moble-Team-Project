@@ -1021,7 +1021,7 @@ namespace calendar4
 
 
             using var dialog =
-                new DiaryEntryDialog(
+                new DiaryEntryForm(
                     selectedDate,
                     currentEntry);
 

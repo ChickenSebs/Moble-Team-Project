@@ -105,7 +105,8 @@ namespace tap
 
         private void btnHello_Click(object sender, EventArgs e)
         {
-            MessageBox.Show("Hello cho");
+            AD ad = new AD();
+            ad.ShowDialog();
         }
     }
 }

@@ -21,6 +21,8 @@ namespace calendar4
 
         private ContextMenuStrip tabAddMenu;
         private ContextMenuStrip tabContextMenu;
+        private Panel? tabHeaderFillPanel;
+
 
         private TabPage targetTab = null;
         private TextBox txtRenameEditor;
@@ -28,7 +30,8 @@ namespace calendar4
 
         private readonly HolidayService holidayService = new();
         private readonly SummaryService summaryService = new();
-        private readonly TabRepository tabRepository = new();
+        private readonly TabDbRepository tabDbRepository = new();
+        private readonly CalendarDbRepository calendarDbRepository = new();
 
         private AlarmManager? alarmManager;
 
@@ -88,9 +91,23 @@ namespace calendar4
 
             // 메인폼에 테마 적용
             UiThemeService.ApplyTheme(this);
+            tabControl1.BackColor =
+    UiThemeService.BackgroundColor;
+
+            foreach (TabPage tab in tabControl1.TabPages)
+            {
+                tab.BackColor =
+                    UiThemeService.BackgroundColor;
+
+                tab.ForeColor =
+                    UiThemeService.TextColor;
+            }
+
+            tabControl1.Invalidate();
 
             // 열려있는 모든 탭에도 테마 적용
             ApplyThemeToAllTabs();
+            UpdateTabHeaderFillPanel();
 
             // 선택한 테마를 DB에 저장
             SaveUserTheme(theme);
@@ -260,7 +277,248 @@ namespace calendar4
                 return AppTheme.Light;
             }
         }
+        private int GetFontNumber(AppFontType font)
+        {
+            return (int)font;
+        }
 
+
+        // ============================================================
+        // 사용자 글꼴 DB 저장
+        // ============================================================
+        private void SaveUserFont(AppFontType font)
+        {
+            try
+            {
+                using var connection =
+                    new DBConnection().GetConnection();
+
+                connection.Open();
+
+                const string sql = @"
+            UPDATE user
+            SET font = @font
+            WHERE user_id = @user_id";
+
+                using var command =
+                    new MySqlCommand(sql, connection);
+
+                command.Parameters.AddWithValue(
+                    "@font",
+                    GetFontNumber(font));
+
+                command.Parameters.AddWithValue(
+                    "@user_id",
+                    loggedInUserId);
+
+                command.ExecuteNonQuery();
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show(
+                    $"글꼴 저장 중 오류가 발생했습니다.\n\n{ex.Message}",
+                    "DB 오류",
+                    MessageBoxButtons.OK,
+                    MessageBoxIcon.Error);
+            }
+        }
+
+
+        // ============================================================
+        // 사용자 글꼴 DB 불러오기
+        // ============================================================
+        private AppFontType LoadUserFont()
+        {
+            try
+            {
+                using var connection =
+                    new DBConnection().GetConnection();
+
+                connection.Open();
+
+                const string sql = @"
+            SELECT font
+            FROM user
+            WHERE user_id = @user_id";
+
+                using var command =
+                    new MySqlCommand(sql, connection);
+
+                command.Parameters.AddWithValue(
+                    "@user_id",
+                    loggedInUserId);
+
+                object? result =
+                    command.ExecuteScalar();
+
+                if (result == null ||
+                    result == DBNull.Value)
+                {
+                    return AppFontType.MalgunGothic;
+                }
+
+                int fontValue =
+                    Convert.ToInt32(result);
+
+                return fontValue switch
+                {
+                    1 => AppFontType.Batang,
+                    2 => AppFontType.Dotum,
+                    3 => AppFontType.HancomMalang,
+                    4 => AppFontType.HunminHorizontal,
+                    5 => AppFontType.HancomSanzDotum,
+
+                    _ => AppFontType.MalgunGothic
+                };
+            }
+            catch
+            {
+                return AppFontType.MalgunGothic;
+            }
+        }
+        private void ApplySelectedFont(AppFontType font)
+        {
+            // ============================================================
+            // 1. 프리미엄 글꼴인지 확인
+            // ============================================================
+
+            if (AppFontService.IsPremiumFont(font) &&
+                !CurrentUser.IsPremium)
+            {
+                MessageBox.Show(
+                    "프리미엄 사용자만 사용할 수 있는 글꼴입니다.",
+                    "Premium",
+                    MessageBoxButtons.OK,
+                    MessageBoxIcon.Information);
+
+                return;
+            }
+
+
+            // ============================================================
+            // 2. 현재 글꼴 변경
+            // ============================================================
+
+            AppFontService.SetFont(font);
+
+
+            // ============================================================
+            // 3. 메인폼의 일반 컨트롤 글꼴 변경
+            // ============================================================
+
+            ApplyFontToControlRecursive(this);
+
+
+            // ============================================================
+            // 4. 탭 내부 전용 컨트롤 글꼴 변경
+            // ============================================================
+
+            foreach (TabPage tab in tabControl1.TabPages)
+            {
+                if (tab.Controls.Count == 0)
+                    continue;
+
+                Control control =
+                    tab.Controls[0];
+
+                if (control is CalendarControl calendarControl)
+                {
+                    calendarControl.ApplyCurrentFont();
+                }
+
+                // PlannerControl은 다음 단계에서
+                // ApplyCurrentFont()를 추가한 뒤 활성화
+                /*
+                else if (control is PlannerControl plannerControl)
+                {
+                    plannerControl.ApplyCurrentFont();
+                }
+                */
+
+                // Timetable도 다음 단계에서
+                // ApplyCurrentFont()를 추가한 뒤 활성화
+                /*
+                else if (control is Timetable timetable)
+                {
+                    timetable.ApplyCurrentFont();
+                }
+                */
+            }
+
+
+            // ============================================================
+            // 5. 현재 선택된 글꼴 메뉴 체크 표시
+            // ============================================================
+
+            UpdateFontMenu();
+
+
+            // ============================================================
+            // 6. 사용자 선택 글꼴 DB 저장
+            // ============================================================
+
+            SaveUserFont(font);
+
+
+            // ============================================================
+            // 7. 화면 다시 그리기
+            // ============================================================
+
+            Invalidate(true);
+            Refresh();
+        }
+        private void ApplyFontToControlRecursive(Control parent)
+        {
+            foreach (Control control in parent.Controls)
+            {
+                // 자체적으로 글꼴을 처리하는 컨트롤은 제외
+                if (control is CalendarControl ||
+                    control is PlannerControl ||
+                    control is Timetable)
+                {
+                    continue;
+                }
+
+                float originalSize =
+                    control.Font.Size;
+
+                FontStyle originalStyle =
+                    control.Font.Style;
+
+                control.Font =
+                    AppFontService.CreateFont(
+                        originalSize,
+                        originalStyle);
+
+                if (control.HasChildren)
+                {
+                    ApplyFontToControlRecursive(control);
+                }
+            }
+        }
+        private void UpdateFontMenu()
+        {
+            AppFontType currentFont =
+                AppFontService.CurrentFont;
+
+            맑은고딕ToolStripMenuItem.Checked =
+                currentFont == AppFontType.MalgunGothic;
+
+            바탕체ToolStripMenuItem.Checked =
+                currentFont == AppFontType.Batang;
+
+            돋움ToolStripMenuItem.Checked =
+                currentFont == AppFontType.Dotum;
+
+            한컴말랑말랑ToolStripMenuItem.Checked =
+                currentFont == AppFontType.HancomMalang;
+
+            훈민정음가로쓰기ToolStripMenuItem.Checked =
+                currentFont == AppFontType.HunminHorizontal;
+
+            한컴산뜻돋움ToolStripMenuItem.Checked =
+                currentFont == AppFontType.HancomSanzDotum;
+        }
 
         // ============================================================
         // Form Load
@@ -272,6 +530,9 @@ namespace calendar4
         {
             tabControl1.Multiline = false;
 
+            tabControl1.DrawMode = TabDrawMode.OwnerDrawFixed;
+            tabControl1.DrawItem -= tabControl1_DrawItem;
+            tabControl1.DrawItem += tabControl1_DrawItem;
             InitTabAddMenu();
             InitTabContextMenu();
             InitRenameEditor();
@@ -296,8 +557,7 @@ namespace calendar4
             // 저장된 탭 생성
             LoadTabs();
             LoadSavedDday();
-
-
+            InitializeTabHeaderFillPanel();
             // ========================================================
             // 로그인한 사용자의 저장된 테마 불러오기
             // ========================================================
@@ -315,7 +575,20 @@ namespace calendar4
             // LoadTabs()에서 이미 생성된 탭에도 적용
             ApplyThemeToAllTabs();
 
+            // =============================================
+            // 저장된 사용자 글꼴 불러오기
+            // =============================================
 
+            AppFontType savedFont =
+                LoadUserFont();
+
+            AppFontService.SetFont(
+                savedFont);
+
+            ApplyFontToControlRecursive(
+                this);
+
+            UpdateFontMenu();
             // ========================================================
             // 알람 시작
             // ========================================================
@@ -332,6 +605,50 @@ namespace calendar4
                 currentMonth.Month);
 
             RefreshAllViews();
+
+            if (!IsPremiumUser())
+            {
+                AD ad = new AD();
+                ad.ShowDialog();
+            }
+        }
+
+        private bool IsPremiumUser()
+        {
+            try
+            {
+                using var connection =
+                    new DBConnection().GetConnection();
+
+                connection.Open();
+
+                const string sql = @"
+            SELECT premium
+            FROM user
+            WHERE user_id = @user_id";
+
+                using var command =
+                    new MySqlCommand(sql, connection);
+
+                command.Parameters.AddWithValue(
+                    "@user_id",
+                    loggedInUserId);
+
+                object? result =
+                    command.ExecuteScalar();
+
+                if (result == null ||
+                    result == DBNull.Value)
+                {
+                    return false;
+                }
+
+                return Convert.ToInt32(result) == 1;
+            }
+            catch
+            {
+                return false;
+            }
         }
 
 
@@ -853,16 +1170,40 @@ namespace calendar4
                     plusIndex);
             }
 
+            int? calendarId = null;
+
+            // ========================================
+            // 개인 캘린더 탭이라면
+            // DB에 새로운 달력 공간을 먼저 만든다.
+            // ========================================
+            if (type == TabType.Calendar)
+            {
+                calendarId =
+                    calendarDbRepository.CreateCalendar(
+                        loggedInUserId,
+                        title);
+            }
+
             TabPage newTab =
                 CreateTabPage(
                     title,
-                    type);
+                    type,
+                    calendarId);
 
             tabControl1.TabPages.Add(
                 new TabPage("+"));
 
             tabControl1.SelectedTab =
                 newTab;
+
+            // 새 탭 정보를 DB에 저장
+            SaveTabs();
+
+            // 새 탭이 추가되었으므로 탭 헤더의 오른쪽 빈 영역 위치 갱신
+            UpdateTabHeaderFillPanel();
+
+            // 탭 색상 다시 그리기
+            tabControl1.Invalidate();
         }
 
 
@@ -958,6 +1299,15 @@ namespace calendar4
 
                 targetTab =
                     null;
+
+                // 삭제된 탭 상태를 DB에 저장
+                SaveTabs();
+
+                // 탭 개수가 바뀌었으므로 오른쪽 빈 영역 위치 갱신
+                UpdateTabHeaderFillPanel();
+
+                // 탭 색상 다시 그리기
+                tabControl1.Invalidate();
             }
         }
 
@@ -1086,11 +1436,15 @@ namespace calendar4
                 txtRenameEditor != null &&
                 txtRenameEditor.Visible)
             {
+                bool renamed = false;
+
                 if (!string.IsNullOrWhiteSpace(
                         txtRenameEditor.Text))
                 {
                     editingTab.Text =
                         txtRenameEditor.Text;
+
+                    renamed = true;
                 }
 
                 txtRenameEditor.Visible =
@@ -1098,6 +1452,18 @@ namespace calendar4
 
                 editingTab =
                     null;
+
+                if (renamed)
+                {
+                    // 변경된 탭 이름을 DB에 저장
+                    SaveTabs();
+
+                    // 탭 글자 길이가 바뀌었을 수 있으므로 빈 영역 위치 갱신
+                    UpdateTabHeaderFillPanel();
+
+                    // 탭을 다시 그림
+                    tabControl1.Invalidate();
+                }
             }
         }
 
@@ -1108,13 +1474,17 @@ namespace calendar4
 
         private TabPage CreateTabPage(
             string title,
-            TabType type)
+            TabType type, int? calendarId = null)
         {
-            TabPage newTab =
-                new TabPage(title)
+            TabPage newTab = new TabPage(title)
+            {
+                Tag = new TabData
                 {
-                    Tag = type
-                };
+                    Title = title,
+                    Type = type,
+                    CalendarId = calendarId
+                }
+            };
 
             Control content;
 
@@ -1197,31 +1567,35 @@ namespace calendar4
                 case TabType.Calendar:
                 default:
 
+                    // calendarId가 반드시 있어야 함
+                    if (calendarId is null)
+                    {
+                        throw new InvalidOperationException(
+                            "개인 캘린더의 calendar_id가 없습니다.");
+                    }
+
                     var calCtrl =
                         new CalendarControl(
-                            loggedInUserId)
+                            loggedInUserId,
+                            calendarId.Value)
                         {
-                            Dock =
-                                DockStyle.Fill
+                            Dock = DockStyle.Fill
                         };
 
                     calCtrl.SetHolidayMap(
                         holidayMap);
 
-                    calCtrl.DateOrScheduleChanged += (s, ev) =>
-                    {
-                        currentMonth = calCtrl.GetTargetDate();
+                    calCtrl.DateOrScheduleChanged +=
+                        (s, ev) =>
+                        {
+                            currentMonth =
+                                calCtrl.GetTargetDate();
 
-                        SyncSmallCalendar();
+                            SyncSmallCalendar();
+                            RefreshAllViews();
+                        };
 
-                        RefreshAllViews();
-
-                        // ★ 일정 삭제 후 D-day 상태도 다시 확인
-                        RefreshDdayLabel();
-                    };
-
-                    content =
-                        calCtrl;
+                    content = calCtrl;
 
                     break;
             }
@@ -1269,26 +1643,44 @@ namespace calendar4
 
         private void SaveTabs()
         {
-            var tabs =
-                tabControl1.TabPages
-                    .Cast<TabPage>()
-                    .Where(
-                        tab => tab.Text != "+")
-                    .Select(
-                        tab => new TabData
+            try
+            {
+                var tabs =
+                    tabControl1.TabPages
+                        .Cast<TabPage>()
+                        .Where(tab => tab.Text != "+")
+                        .Select(tab =>
                         {
-                            Title =
-                                tab.Text,
+                            var data =
+                                tab.Tag as TabData;
 
-                            Type =
-                                tab.Tag is TabType type
-                                    ? type
-                                    : TabType.Calendar
+                            return new TabData
+                            {
+                                Title =
+                                    tab.Text,
+
+                                Type =
+                                    data?.Type
+                                    ?? TabType.Calendar,
+
+                                CalendarId =
+                                    data?.CalendarId
+                            };
                         })
-                    .ToList();
+                        .ToList();
 
-            tabRepository.Save(
-                tabs);
+                tabDbRepository.Save(
+                    loggedInUserId,
+                    tabs);
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show(
+                    $"탭 정보를 DB에 저장하지 못했습니다.\n\n{ex.Message}",
+                    "DB 오류",
+                    MessageBoxButtons.OK,
+                    MessageBoxIcon.Error);
+            }
         }
 
 
@@ -1298,12 +1690,33 @@ namespace calendar4
 
         private void LoadTabs()
         {
-            var tabs =
-                tabRepository.Load();
+            List<TabData> tabs;
+
+            try
+            {
+                tabs =
+                    tabDbRepository.Load(
+                        loggedInUserId);
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show(
+                    $"탭 정보를 DB에서 불러오지 못했습니다.\n\n{ex.Message}",
+                    "DB 오류",
+                    MessageBoxButtons.OK,
+                    MessageBoxIcon.Error);
+
+                tabs =
+                    new List<TabData>();
+            }
+
 
             if (tabs.Count == 0)
             {
                 SetupDefaultFirstTab();
+
+                // 처음 생성한 기본 탭도 DB에 바로 저장
+                SaveTabs();
             }
             else
             {
@@ -1313,21 +1726,39 @@ namespace calendar4
                 {
                     CreateTabPage(
                         tab.Title,
-                        tab.Type);
+                        tab.Type,
+                        tab.CalendarId);
                 }
             }
 
             tabControl1.TabPages.Add(
                 new TabPage("+"));
+
+            // 이미 헤더 채움 패널이 만들어진 상태라면 위치 갱신
+            UpdateTabHeaderFillPanel();
         }
 
         private void SetupDefaultFirstTab()
         {
             tabControl1.TabPages.Clear();
 
+            int? calendarId =
+                calendarDbRepository.GetFirstCalendarId(
+                    loggedInUserId);
+
+            // DB에 기본 캘린더 공간이 아직 없으면 하나 생성
+            if (calendarId is null)
+            {
+                calendarId =
+                    calendarDbRepository.CreateCalendar(
+                        loggedInUserId,
+                        "개인 캘린더");
+            }
+
             CreateTabPage(
                 "개인 캘린더",
-                TabType.Calendar);
+                TabType.Calendar,
+                calendarId);
         }
 
         private void btnMy_Click(object sender, EventArgs e)
@@ -1484,7 +1915,7 @@ namespace calendar4
             }
 
             using var dialog =
-                new SearchResultsDialog(
+                new SearchResultsForm(
                     searchScope,
                     keyword,
                     results);
@@ -1646,7 +2077,8 @@ namespace calendar4
                 // 저장된 D-Day가 하나도 없는 경우
                 if (!reader.Read())
                 {
-                    lbDday.Text = "[ D-Day 없음 ]";
+                    // D-Day가 없으면 화면에는 아무것도 표시하지 않음
+                    lbDday.Text = "";
                     return;
                 }
 
@@ -1721,11 +2153,30 @@ namespace calendar4
             }
         }
 
-        private void btn_Dday_Click(object sender,EventArgs e)
+        private void btn_Dday_Click(object sender, EventArgs e)
         {
+            // 현재 선택된 탭의 정보 가져오기
+            if (tabControl1.SelectedTab?.Tag
+                is not TabData tabData)
+            {
+                MessageBox.Show(
+                    "개인 캘린더 탭을 선택해주세요.");
+                return;
+            }
+
+            // 개인 캘린더가 아니거나 calendarId가 없는 경우
+            if (tabData.Type != TabType.Calendar ||
+                tabData.CalendarId is null)
+            {
+                MessageBox.Show(
+                    "개인 캘린더 탭에서 D-Day를 설정해주세요.");
+                return;
+            }
+
             using var form =
                 new DdaySettingForm(
-                    loggedInUserId);
+                    loggedInUserId,
+                    tabData.CalendarId.Value);
 
             if (form.ShowDialog(this)
                 != DialogResult.OK)
@@ -1733,43 +2184,17 @@ namespace calendar4
                 return;
             }
 
-            DateTime targetDate =
-                form.SelectedDate;
+            // ========================================================
+            // 중요:
+            // D-Day 설정/해제 후에는 form.SelectedDate를 직접 계산하지 않고
+            // DB를 다시 읽어서 메인 라벨을 갱신한다.
+            //
+            // D-Day를 해제한 경우 SelectedDate가 DateTime.MinValue 상태일 수 있어
+            // 직접 계산하면 D+739841 같은 잘못된 값이 나타날 수 있다.
+            // ========================================================
+            LoadSavedDday();
 
-            int dayDifference =
-                (DateTime.Today - targetDate).Days;
-
-            int dday;
-
-            if (form.StartFromOne)
-            {
-                if (dayDifference >= 0)
-                    dday = dayDifference + 1;
-                else
-                    dday = dayDifference;
-            }
-            else
-            {
-                dday = dayDifference;
-            }
-
-            if (dday > 0)
-            {
-                lbDday.Text =
-                    $"D+{dday} | {form.SelectedTitle}";
-            }
-            else if (dday < 0)
-            {
-                lbDday.Text =
-                    $"D{dday} | {form.SelectedTitle}";
-            }
-            else
-            {
-                lbDday.Text =
-                    $"D-Day | {form.SelectedTitle}";
-            }
-
-            // D-Day 추가 후 개인달력 새로고침
+            // D-Day 변경 후 개인달력 새로고침
             foreach (TabPage tab
                 in tabControl1.TabPages)
             {
@@ -1783,6 +2208,269 @@ namespace calendar4
             }
 
             UpdateSummaryView();
+        }
+
+        private void 맑은고딕ToolStripMenuItem_Click(
+    object sender,
+    EventArgs e)
+        {
+            ApplySelectedFont(
+                AppFontType.MalgunGothic);
+        }
+
+        private void 바탕체ToolStripMenuItem_Click(
+            object sender,
+            EventArgs e)
+        {
+            ApplySelectedFont(
+                AppFontType.Batang);
+        }
+
+        private void 돋움ToolStripMenuItem_Click(
+            object sender,
+            EventArgs e)
+        {
+            ApplySelectedFont(
+                AppFontType.Dotum);
+        }
+
+        private void 한컴말랑말랑ToolStripMenuItem_Click(
+            object sender,
+            EventArgs e)
+        {
+            ApplySelectedFont(
+                AppFontType.HancomMalang);
+        }
+
+        private void 훈민정음가로쓰기ToolStripMenuItem_Click(
+            object sender,
+            EventArgs e)
+        {
+            ApplySelectedFont(
+                AppFontType.HunminHorizontal);
+        }
+
+        private void 한컴산뜻돋움ToolStripMenuItem_Click(
+            object sender,
+            EventArgs e)
+        {
+            ApplySelectedFont(
+                AppFontType.HancomSanzDotum);
+        }
+        // ============================================================
+        // 탭 헤더 오른쪽 빈 영역 처리
+        // ============================================================
+
+        private void InitializeTabHeaderFillPanel()
+        {
+            if (tabHeaderFillPanel != null)
+                return;
+
+            tabHeaderFillPanel =
+                new Panel
+                {
+                    BackColor =
+                        UiThemeService.BackgroundColor,
+
+                    TabStop =
+                        false
+                };
+
+            Controls.Add(
+                tabHeaderFillPanel);
+
+            tabControl1.SizeChanged +=
+                (_, _) =>
+                    UpdateTabHeaderFillPanel();
+
+            UpdateTabHeaderFillPanel();
+        }
+
+
+        private void UpdateTabHeaderFillPanel()
+        {
+            if (tabHeaderFillPanel == null ||
+                tabControl1 == null ||
+                tabControl1.TabPages.Count == 0 ||
+                !tabControl1.IsHandleCreated)
+            {
+                return;
+            }
+
+            int lastIndex =
+                tabControl1.TabPages.Count - 1;
+
+            Rectangle lastTabRect =
+                tabControl1.GetTabRect(
+                    lastIndex);
+
+            // 마지막 탭 오른쪽 끝
+            Point startPoint =
+                PointToClient(
+                    tabControl1.PointToScreen(
+                        new Point(
+                            lastTabRect.Right,
+                            lastTabRect.Top)));
+
+            // TabControl 전체 오른쪽 끝
+            Point rightPoint =
+                PointToClient(
+                    tabControl1.PointToScreen(
+                        new Point(
+                            tabControl1.ClientSize.Width,
+                            lastTabRect.Top)));
+
+            int width =
+                Math.Max(
+                    0,
+                    rightPoint.X -
+                    startPoint.X);
+
+            if (width <= 0)
+            {
+                tabHeaderFillPanel.Visible =
+                    false;
+
+                return;
+            }
+
+            tabHeaderFillPanel.Visible =
+                true;
+
+            tabHeaderFillPanel.BackColor =
+                UiThemeService.BackgroundColor;
+
+            tabHeaderFillPanel.Bounds =
+                new Rectangle(
+                    startPoint.X,
+                    startPoint.Y,
+                    width,
+                    lastTabRect.Height);
+
+            tabHeaderFillPanel.BringToFront();
+        }
+
+
+        // ============================================================
+        // 탭 버튼 직접 그리기
+        // ============================================================
+
+        private void tabControl1_DrawItem(
+            object sender,
+            DrawItemEventArgs e)
+        {
+            TabPage tabPage =
+                tabControl1.TabPages[e.Index];
+
+            Rectangle rect =
+                tabControl1.GetTabRect(e.Index);
+
+            bool isSelected =
+                e.Index ==
+                tabControl1.SelectedIndex;
+
+            Color backColor;
+            Color textColor;
+
+
+            if (isSelected)
+            {
+                // 선택된 탭
+                backColor =
+                    UiThemeService.PrimaryColor;
+
+                textColor =
+                    UiThemeService.CurrentTheme ==
+                    AppTheme.Dark
+                        ? Color.White
+                        : Color.FromArgb(
+                            45,
+                            45,
+                            55);
+            }
+            else
+            {
+                // 선택되지 않은 탭
+                backColor =
+                    UiThemeService.CurrentTheme switch
+                    {
+                        AppTheme.Dark =>
+                            Color.FromArgb(
+                                48,
+                                48,
+                                52),
+
+                        AppTheme.Blossom =>
+                            Color.FromArgb(
+                                252,
+                                235,
+                                241),
+
+                        AppTheme.Mint =>
+                            Color.FromArgb(
+                                232,
+                                246,
+                                240),
+
+                        AppTheme.Lavender =>
+                            Color.FromArgb(
+                                239,
+                                233,
+                                248),
+
+                        AppTheme.Cozy =>
+                            Color.FromArgb(
+                                244,
+                                235,
+                                222),
+
+                        _ =>
+                            Color.FromArgb(
+                                240,
+                                242,
+                                246)
+                    };
+
+                textColor =
+                    UiThemeService.TextColor;
+            }
+
+
+            using (SolidBrush backBrush =
+                   new SolidBrush(backColor))
+            {
+                e.Graphics.FillRectangle(
+                    backBrush,
+                    rect);
+            }
+
+
+            TextRenderer.DrawText(
+                e.Graphics,
+                tabPage.Text,
+                tabControl1.Font,
+                rect,
+                textColor,
+                TextFormatFlags.HorizontalCenter |
+                TextFormatFlags.VerticalCenter);
+
+
+            // 선택된 탭 아래 포인트 선
+            if (isSelected)
+            {
+                using (Pen pen =
+                       new Pen(
+                           UiThemeService.PrimaryColor,
+                           2))
+                {
+                    e.Graphics.DrawLine(
+                        pen,
+                        rect.Left,
+                        rect.Bottom - 1,
+                        rect.Right,
+                        rect.Bottom - 1);
+                }
+            }
         }
     }
 }

@@ -245,11 +245,10 @@ public partial class Timetable : UserControl
 
                 Dock =
                     DockStyle.Fill,
-
                 Font =
-                    new Font(
-                        "맑은 고딕",
-                        8.5F),
+                    AppFontService.CreateFont(
+                        8.5F,
+                        FontStyle.Regular),
 
                 ForeColor =
                     GetScheduleTextColor(),
@@ -328,11 +327,10 @@ public partial class Timetable : UserControl
                 new Label
                 {
                     AutoSize = false,
-
                     Font =
-                        new Font(
-                            "맑은 고딕",
-                            9.5F),
+                        AppFontService.CreateFont(
+                            9.5F,
+                            FontStyle.Regular),
 
                     ForeColor =
                         GetSecondaryTextColor(),
@@ -424,9 +422,9 @@ public partial class Timetable : UserControl
                     true,
 
                 Font =
-                    new Font(
-                        "맑은 고딕",
-                        8.5F),
+                    AppFontService.CreateFont(
+                        8.5F,
+                        FontStyle.Regular),
 
                 ForeColor =
                     GetSecondaryTextColor(),
@@ -448,10 +446,8 @@ public partial class Timetable : UserControl
             {
                 AutoEllipsis =
                     true,
-
                 Font =
-                    new Font(
-                        "맑은 고딕",
+                    AppFontService.CreateFont(
                         10.5F,
                         FontStyle.Bold),
 
@@ -485,9 +481,9 @@ public partial class Timetable : UserControl
                     true,
 
                 Font =
-                    new Font(
-                        "맑은 고딕",
-                        8.5F),
+                    AppFontService.CreateFont(
+                        8.5F,
+                        FontStyle.Regular),
 
                 ForeColor =
                     GetSecondaryTextColor(),
@@ -726,6 +722,7 @@ public partial class Timetable : UserControl
         ApplyCurrentTheme();
     }
 
+    // 전공 / 교양 / 기타 범례도 현재 테마 전용 팔레트 사용
     private void ApplyCategoryColors()
     {
         legendBlue.BackColor =
@@ -1163,66 +1160,108 @@ public partial class Timetable : UserControl
     private static Color GetThemedScheduleBackgroundColor(
         ClassSchedule schedule)
     {
-        Color original =
-            GetScheduleBackgroundColor(
-                schedule);
+        // 사용자가 직접 지정한 커스텀 색이 있으면 그 색은 우선 유지
+        if (schedule.CustomColorArgb.HasValue)
+        {
+            return Color.FromArgb(
+                schedule.CustomColorArgb.Value);
+        }
 
         return UiThemeService.CurrentTheme switch
         {
-            // 다크에서는 과목색을 조금 어둡게
-            AppTheme.Dark =>
-                BlendColor(
-                    original,
-                    Color.FromArgb(
-                        38,
-                        38,
-                        42),
-                    0.45),
+            // ---------------------------------------------------------
+            // Dark : 채도를 낮춘 진한 포인트 컬러
+            // 전공=바이올렛, 교양=세이지, 기타=앰버
+            // ---------------------------------------------------------
+            AppTheme.Dark => schedule.Category switch
+            {
+                ScheduleCategory.Major =>
+                    Color.FromArgb(105, 91, 145),
 
-            // Blossom은 아주 약하게 핑크 쪽으로
-            AppTheme.Blossom =>
-                BlendColor(
-                    original,
-                    Color.FromArgb(
-                        255,
-                        225,
-                        235),
-                    0.18),
+                ScheduleCategory.General =>
+                    Color.FromArgb(92, 132, 112),
 
-            // Mint
-            AppTheme.Mint =>
-                BlendColor(
-                    original,
-                    Color.FromArgb(
-                        220,
-                        245,
-                        235),
-                    0.15),
+                ScheduleCategory.Other =>
+                    Color.FromArgb(153, 126, 77),
 
-            // Lavender
-            AppTheme.Lavender =>
-                BlendColor(
-                    original,
-                    Color.FromArgb(
-                        235,
-                        225,
-                        250),
-                    0.18),
+                _ => GetScheduleBackgroundColor(schedule)
+            },
 
-            // Cozy
-            AppTheme.Cozy =>
-                BlendColor(
-                    original,
-                    Color.FromArgb(
-                        242,
-                        225,
-                        205),
-                    0.18),
+            // ---------------------------------------------------------
+            // Blossom : 벚꽃/로즈/피치 계열
+            // 전공=사쿠라, 교양=라일락, 기타=피치
+            // ---------------------------------------------------------
+            AppTheme.Blossom => schedule.Category switch
+            {
+                ScheduleCategory.Major =>
+                    Color.FromArgb(242, 184, 198),
 
-            _ =>
-                original
+                ScheduleCategory.General =>
+                    Color.FromArgb(214, 193, 223),
+
+                ScheduleCategory.Other =>
+                    Color.FromArgb(244, 197, 181),
+
+                _ => GetScheduleBackgroundColor(schedule)
+            },
+
+            // ---------------------------------------------------------
+            // Mint : 민트/세이지 계열
+            // 전공=소프트 민트, 교양=세이지, 기타=미스트
+            // ---------------------------------------------------------
+            AppTheme.Mint => schedule.Category switch
+            {
+                ScheduleCategory.Major =>
+                    Color.FromArgb(168, 212, 197),
+
+                ScheduleCategory.General =>
+                    Color.FromArgb(184, 205, 185),
+
+                ScheduleCategory.Other =>
+                    Color.FromArgb(193, 217, 210),
+
+                _ => GetScheduleBackgroundColor(schedule)
+            },
+
+            // ---------------------------------------------------------
+            // Lavender : 라벤더/페리윙클/모브
+            // ---------------------------------------------------------
+            AppTheme.Lavender => schedule.Category switch
+            {
+                ScheduleCategory.Major =>
+                    Color.FromArgb(201, 184, 223),
+
+                ScheduleCategory.General =>
+                    Color.FromArgb(187, 196, 223),
+
+                ScheduleCategory.Other =>
+                    Color.FromArgb(208, 179, 202),
+
+                _ => GetScheduleBackgroundColor(schedule)
+            },
+
+            // ---------------------------------------------------------
+            // Cozy : 애프리콧/올리브/샌드
+            // ---------------------------------------------------------
+            AppTheme.Cozy => schedule.Category switch
+            {
+                ScheduleCategory.Major =>
+                    Color.FromArgb(220, 180, 159),
+
+                ScheduleCategory.General =>
+                    Color.FromArgb(184, 178, 142),
+
+                ScheduleCategory.Other =>
+                    Color.FromArgb(214, 197, 169),
+
+                _ => GetScheduleBackgroundColor(schedule)
+            },
+
+            // 기본 테마는 기존 카테고리 색 유지
+            _ => GetScheduleBackgroundColor(schedule)
         };
     }
+
 
     // =========================================================
     // ★ 과목 강조색
@@ -1230,61 +1269,88 @@ public partial class Timetable : UserControl
     private static Color GetThemedScheduleAccentColor(
         ClassSchedule schedule)
     {
-        Color original =
-            GetScheduleAccentColor(
-                schedule);
+        // 커스텀 색은 원래 강조색 로직 유지
+        if (schedule.CustomColorArgb.HasValue)
+        {
+            return GetScheduleAccentColor(schedule);
+        }
 
         return UiThemeService.CurrentTheme switch
         {
-            AppTheme.Dark =>
-                BlendColor(
-                    original,
-                    Color.FromArgb(
-                        90,
-                        80,
-                        125),
-                    0.20),
+            AppTheme.Dark => schedule.Category switch
+            {
+                ScheduleCategory.Major =>
+                    Color.FromArgb(145, 112, 184),
 
-            AppTheme.Blossom =>
-                BlendColor(
-                    original,
-                    Color.FromArgb(
-                        225,
-                        105,
-                        145),
-                    0.15),
+                ScheduleCategory.General =>
+                    Color.FromArgb(120, 151, 131),
 
-            AppTheme.Mint =>
-                BlendColor(
-                    original,
-                    Color.FromArgb(
-                        75,
-                        160,
-                        130),
-                    0.15),
+                ScheduleCategory.Other =>
+                    Color.FromArgb(185, 155, 101),
 
-            AppTheme.Lavender =>
-                BlendColor(
-                    original,
-                    Color.FromArgb(
-                        135,
-                        105,
-                        190),
-                    0.15),
+                _ => GetScheduleAccentColor(schedule)
+            },
 
-            AppTheme.Cozy =>
-                BlendColor(
-                    original,
-                    Color.FromArgb(
-                        170,
-                        125,
-                        85),
-                    0.15),
+            AppTheme.Blossom => schedule.Category switch
+            {
+                ScheduleCategory.Major =>
+                    Color.FromArgb(217, 111, 142),
 
-            _ =>
-                original
+                ScheduleCategory.General =>
+                    Color.FromArgb(185, 154, 210),
+
+                ScheduleCategory.Other =>
+                    Color.FromArgb(226, 154, 120),
+
+                _ => GetScheduleAccentColor(schedule)
+            },
+
+            AppTheme.Mint => schedule.Category switch
+            {
+                ScheduleCategory.Major =>
+                    Color.FromArgb(114, 176, 157),
+
+                ScheduleCategory.General =>
+                    Color.FromArgb(142, 169, 142),
+
+                ScheduleCategory.Other =>
+                    Color.FromArgb(142, 180, 171),
+
+                _ => GetScheduleAccentColor(schedule)
+            },
+
+            AppTheme.Lavender => schedule.Category switch
+            {
+                ScheduleCategory.Major =>
+                    Color.FromArgb(158, 126, 201),
+
+                ScheduleCategory.General =>
+                    Color.FromArgb(139, 153, 204),
+
+                ScheduleCategory.Other =>
+                    Color.FromArgb(179, 134, 171),
+
+                _ => GetScheduleAccentColor(schedule)
+            },
+
+            AppTheme.Cozy => schedule.Category switch
+            {
+                ScheduleCategory.Major =>
+                    Color.FromArgb(190, 137, 111),
+
+                ScheduleCategory.General =>
+                    Color.FromArgb(145, 140, 99),
+
+                ScheduleCategory.Other =>
+                    Color.FromArgb(181, 158, 126),
+
+                _ => GetScheduleAccentColor(schedule)
+            },
+
+            _ => GetScheduleAccentColor(schedule)
         };
     }
+
 
     // =========================================================
     // ★ 범례 색상도 테마에 맞게
@@ -1292,61 +1358,82 @@ public partial class Timetable : UserControl
     private static Color GetThemedLegendColor(
         ScheduleCategory category)
     {
-        Color original =
-            ScheduleColorService
-                .GetAccentColor(category);
-
         return UiThemeService.CurrentTheme switch
         {
-            AppTheme.Dark =>
-                BlendColor(
-                    original,
-                    Color.FromArgb(
-                        80,
-                        75,
-                        100),
-                    0.20),
+            AppTheme.Dark => category switch
+            {
+                ScheduleCategory.Major =>
+                    Color.FromArgb(145, 112, 184),
 
-            AppTheme.Blossom =>
-                BlendColor(
-                    original,
-                    Color.FromArgb(
-                        240,
-                        140,
-                        170),
-                    0.12),
+                ScheduleCategory.General =>
+                    Color.FromArgb(120, 151, 131),
 
-            AppTheme.Mint =>
-                BlendColor(
-                    original,
-                    Color.FromArgb(
-                        100,
-                        185,
-                        155),
-                    0.12),
+                ScheduleCategory.Other =>
+                    Color.FromArgb(185, 155, 101),
 
-            AppTheme.Lavender =>
-                BlendColor(
-                    original,
-                    Color.FromArgb(
-                        155,
-                        130,
-                        205),
-                    0.12),
+                _ => ScheduleColorService.GetAccentColor(category)
+            },
 
-            AppTheme.Cozy =>
-                BlendColor(
-                    original,
-                    Color.FromArgb(
-                        185,
-                        145,
-                        105),
-                    0.12),
+            AppTheme.Blossom => category switch
+            {
+                ScheduleCategory.Major =>
+                    Color.FromArgb(217, 111, 142),
 
-            _ =>
-                original
+                ScheduleCategory.General =>
+                    Color.FromArgb(185, 154, 210),
+
+                ScheduleCategory.Other =>
+                    Color.FromArgb(226, 154, 120),
+
+                _ => ScheduleColorService.GetAccentColor(category)
+            },
+
+            AppTheme.Mint => category switch
+            {
+                ScheduleCategory.Major =>
+                    Color.FromArgb(114, 176, 157),
+
+                ScheduleCategory.General =>
+                    Color.FromArgb(142, 169, 142),
+
+                ScheduleCategory.Other =>
+                    Color.FromArgb(142, 180, 171),
+
+                _ => ScheduleColorService.GetAccentColor(category)
+            },
+
+            AppTheme.Lavender => category switch
+            {
+                ScheduleCategory.Major =>
+                    Color.FromArgb(158, 126, 201),
+
+                ScheduleCategory.General =>
+                    Color.FromArgb(139, 153, 204),
+
+                ScheduleCategory.Other =>
+                    Color.FromArgb(179, 134, 171),
+
+                _ => ScheduleColorService.GetAccentColor(category)
+            },
+
+            AppTheme.Cozy => category switch
+            {
+                ScheduleCategory.Major =>
+                    Color.FromArgb(190, 137, 111),
+
+                ScheduleCategory.General =>
+                    Color.FromArgb(145, 140, 99),
+
+                ScheduleCategory.Other =>
+                    Color.FromArgb(181, 158, 126),
+
+                _ => ScheduleColorService.GetAccentColor(category)
+            },
+
+            _ => ScheduleColorService.GetAccentColor(category)
         };
     }
+
 
     // =========================================================
     // 색상 혼합
@@ -1512,5 +1599,39 @@ public partial class Timetable : UserControl
                     114,
                     128)
         };
+    }
+    public void ApplyCurrentFont()
+    {
+        SuspendLayout();
+
+        try
+        {
+            foreach (Control control in Controls)
+            {
+                ApplyFontOnly(control);
+            }
+        }
+        finally
+        {
+            ResumeLayout(false);
+        }
+
+        Invalidate(true);
+    }
+
+    private void ApplyFontOnly(Control control)
+    {
+        float oldSize = control.Font.Size;
+        FontStyle oldStyle = control.Font.Style;
+
+        control.Font =
+            AppFontService.CreateFont(
+                oldSize,
+                oldStyle);
+
+        foreach (Control child in control.Controls)
+        {
+            ApplyFontOnly(child);
+        }
     }
 }

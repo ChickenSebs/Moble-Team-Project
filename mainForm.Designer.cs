@@ -31,6 +31,13 @@
             menuStrip1 = new MenuStrip();
             tool_back = new ToolStripMenuItem();
             tool_font = new ToolStripMenuItem();
+            맑은고딕ToolStripMenuItem = new ToolStripMenuItem();
+            바탕체ToolStripMenuItem = new ToolStripMenuItem();
+            돋움ToolStripMenuItem = new ToolStripMenuItem();
+            toolStripSeparator1 = new ToolStripSeparator();
+            한컴말랑말랑ToolStripMenuItem = new ToolStripMenuItem();
+            훈민정음가로쓰기ToolStripMenuItem = new ToolStripMenuItem();
+            한컴산뜻돋움ToolStripMenuItem = new ToolStripMenuItem();
             tool_theme = new ToolStripMenuItem();
             menuThemeLight = new ToolStripMenuItem();
             menuThemeDark = new ToolStripMenuItem();
@@ -43,6 +50,10 @@
             tool_month = new ToolStripMenuItem();
             tool_week = new ToolStripMenuItem();
             tool_day = new ToolStripMenuItem();
+            계정ToolStripMenuItem = new ToolStripMenuItem();
+            마이페이지ToolStripMenuItem = new ToolStripMenuItem();
+            로그인ToolStripMenuItem = new ToolStripMenuItem();
+            디데이ToolStripMenuItem = new ToolStripMenuItem();
             monthCalendar1 = new MonthCalendar();
             richTextBox1 = new RichTextBox();
             backgroundWorker1 = new System.ComponentModel.BackgroundWorker();
@@ -51,11 +62,8 @@
             tabPage1 = new TabPage();
             dgvCalendar = new DataGridView();
             tabControl1 = new TabControl();
-            btn_exit = new Button();
             btn_search = new Button();
-            btnMy = new Button();
             lbDday = new Label();
-            btn_Dday = new Button();
             menuStrip1.SuspendLayout();
             tabPage1.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)dgvCalendar).BeginInit();
@@ -64,7 +72,8 @@
             // 
             // menuStrip1
             // 
-            menuStrip1.Items.AddRange(new ToolStripItem[] { tool_back, tool_con });
+            menuStrip1.BackColor = SystemColors.Window;
+            menuStrip1.Items.AddRange(new ToolStripItem[] { tool_back, tool_con, 계정ToolStripMenuItem, 디데이ToolStripMenuItem });
             menuStrip1.Location = new Point(0, 0);
             menuStrip1.Name = "menuStrip1";
             menuStrip1.Size = new Size(1076, 24);
@@ -80,9 +89,57 @@
             // 
             // tool_font
             // 
+            tool_font.DropDownItems.AddRange(new ToolStripItem[] { 맑은고딕ToolStripMenuItem, 바탕체ToolStripMenuItem, 돋움ToolStripMenuItem, toolStripSeparator1, 한컴말랑말랑ToolStripMenuItem, 훈민정음가로쓰기ToolStripMenuItem, 한컴산뜻돋움ToolStripMenuItem });
             tool_font.Name = "tool_font";
             tool_font.Size = new Size(126, 22);
             tool_font.Text = "폰트";
+            // 
+            // 맑은고딕ToolStripMenuItem
+            // 
+            맑은고딕ToolStripMenuItem.Name = "맑은고딕ToolStripMenuItem";
+            맑은고딕ToolStripMenuItem.Size = new Size(174, 22);
+            맑은고딕ToolStripMenuItem.Text = "맑은 고딕";
+            맑은고딕ToolStripMenuItem.Click += 맑은고딕ToolStripMenuItem_Click;
+            // 
+            // 바탕체ToolStripMenuItem
+            // 
+            바탕체ToolStripMenuItem.Name = "바탕체ToolStripMenuItem";
+            바탕체ToolStripMenuItem.Size = new Size(174, 22);
+            바탕체ToolStripMenuItem.Text = "바탕체";
+            바탕체ToolStripMenuItem.Click += 바탕체ToolStripMenuItem_Click;
+            // 
+            // 돋움ToolStripMenuItem
+            // 
+            돋움ToolStripMenuItem.Name = "돋움ToolStripMenuItem";
+            돋움ToolStripMenuItem.Size = new Size(174, 22);
+            돋움ToolStripMenuItem.Text = "돋움";
+            돋움ToolStripMenuItem.Click += 돋움ToolStripMenuItem_Click;
+            // 
+            // toolStripSeparator1
+            // 
+            toolStripSeparator1.Name = "toolStripSeparator1";
+            toolStripSeparator1.Size = new Size(171, 6);
+            // 
+            // 한컴말랑말랑ToolStripMenuItem
+            // 
+            한컴말랑말랑ToolStripMenuItem.Name = "한컴말랑말랑ToolStripMenuItem";
+            한컴말랑말랑ToolStripMenuItem.Size = new Size(174, 22);
+            한컴말랑말랑ToolStripMenuItem.Text = "한컴 말랑말랑";
+            한컴말랑말랑ToolStripMenuItem.Click += 한컴말랑말랑ToolStripMenuItem_Click;
+            // 
+            // 훈민정음가로쓰기ToolStripMenuItem
+            // 
+            훈민정음가로쓰기ToolStripMenuItem.Name = "훈민정음가로쓰기ToolStripMenuItem";
+            훈민정음가로쓰기ToolStripMenuItem.Size = new Size(174, 22);
+            훈민정음가로쓰기ToolStripMenuItem.Text = "훈민정음 가로쓰기";
+            훈민정음가로쓰기ToolStripMenuItem.Click += 훈민정음가로쓰기ToolStripMenuItem_Click;
+            // 
+            // 한컴산뜻돋움ToolStripMenuItem
+            // 
+            한컴산뜻돋움ToolStripMenuItem.Name = "한컴산뜻돋움ToolStripMenuItem";
+            한컴산뜻돋움ToolStripMenuItem.Size = new Size(174, 22);
+            한컴산뜻돋움ToolStripMenuItem.Text = "한컴 산뜻돋움";
+            한컴산뜻돋움ToolStripMenuItem.Click += 한컴산뜻돋움ToolStripMenuItem_Click;
             // 
             // tool_theme
             // 
@@ -166,24 +223,52 @@
             tool_day.Size = new Size(131, 22);
             tool_day.Text = "일";
             // 
+            // 계정ToolStripMenuItem
+            // 
+            계정ToolStripMenuItem.DropDownItems.AddRange(new ToolStripItem[] { 마이페이지ToolStripMenuItem, 로그인ToolStripMenuItem });
+            계정ToolStripMenuItem.Name = "계정ToolStripMenuItem";
+            계정ToolStripMenuItem.Size = new Size(43, 20);
+            계정ToolStripMenuItem.Text = "계정";
+            // 
+            // 마이페이지ToolStripMenuItem
+            // 
+            마이페이지ToolStripMenuItem.Name = "마이페이지ToolStripMenuItem";
+            마이페이지ToolStripMenuItem.Size = new Size(134, 22);
+            마이페이지ToolStripMenuItem.Text = "마이페이지";
+            마이페이지ToolStripMenuItem.Click += btnMy_Click;
+            // 
+            // 로그인ToolStripMenuItem
+            // 
+            로그인ToolStripMenuItem.Name = "로그인ToolStripMenuItem";
+            로그인ToolStripMenuItem.Size = new Size(134, 22);
+            로그인ToolStripMenuItem.Text = "로그아웃";
+            로그인ToolStripMenuItem.Click += btn_exit_Click;
+            // 
+            // 디데이ToolStripMenuItem
+            // 
+            디데이ToolStripMenuItem.Name = "디데이ToolStripMenuItem";
+            디데이ToolStripMenuItem.Size = new Size(55, 20);
+            디데이ToolStripMenuItem.Text = "디데이";
+            디데이ToolStripMenuItem.Click += btn_Dday_Click;
+            // 
             // monthCalendar1
             // 
-            monthCalendar1.Location = new Point(9, 69);
+            monthCalendar1.Location = new Point(11, 111);
             monthCalendar1.Name = "monthCalendar1";
             monthCalendar1.TabIndex = 1;
             // 
             // richTextBox1
             // 
-            richTextBox1.Location = new Point(9, 227);
+            richTextBox1.Location = new Point(12, 285);
             richTextBox1.Name = "richTextBox1";
-            richTextBox1.Size = new Size(220, 372);
+            richTextBox1.Size = new Size(220, 310);
             richTextBox1.TabIndex = 2;
             richTextBox1.Text = "";
             // 
             // tb_search
             // 
             tb_search.Font = new Font("맑은 고딕", 12.75F, FontStyle.Regular, GraphicsUnit.Point);
-            tb_search.Location = new Point(815, 40);
+            tb_search.Location = new Point(11, 69);
             tb_search.Name = "tb_search";
             tb_search.Size = new Size(149, 30);
             tb_search.TabIndex = 6;
@@ -192,10 +277,11 @@
             // 
             lbmain_title.AutoSize = true;
             lbmain_title.BackColor = Color.Transparent;
-            lbmain_title.Font = new Font("맑은 고딕", 24F, FontStyle.Bold, GraphicsUnit.Point);
-            lbmain_title.Location = new Point(583, 27);
+            lbmain_title.FlatStyle = FlatStyle.Flat;
+            lbmain_title.Font = new Font("맑은 고딕", 21.75F, FontStyle.Bold, GraphicsUnit.Point);
+            lbmain_title.Location = new Point(243, 26);
             lbmain_title.Name = "lbmain_title";
-            lbmain_title.Size = new Size(112, 45);
+            lbmain_title.Size = new Size(100, 40);
             lbmain_title.TabIndex = 7;
             lbmain_title.Text = "label1";
             // 
@@ -212,6 +298,7 @@
             // 
             // dgvCalendar
             // 
+            dgvCalendar.BackgroundColor = SystemColors.Window;
             dgvCalendar.ColumnHeadersHeightSizeMode = DataGridViewColumnHeadersHeightSizeMode.AutoSize;
             dgvCalendar.Dock = DockStyle.Fill;
             dgvCalendar.Location = new Point(3, 3);
@@ -223,75 +310,41 @@
             // tabControl1
             // 
             tabControl1.Controls.Add(tabPage1);
-            tabControl1.Location = new Point(250, 69);
+            tabControl1.Location = new Point(243, 69);
             tabControl1.Name = "tabControl1";
             tabControl1.SelectedIndex = 0;
             tabControl1.Size = new Size(822, 530);
             tabControl1.TabIndex = 3;
             tabControl1.SelectedIndexChanged += tabControl1_SelectedIndexChanged;
             // 
-            // btn_exit
-            // 
-            btn_exit.Location = new Point(134, 27);
-            btn_exit.Name = "btn_exit";
-            btn_exit.Size = new Size(95, 32);
-            btn_exit.TabIndex = 4;
-            btn_exit.Text = "로그아웃";
-            btn_exit.UseVisualStyleBackColor = true;
-            btn_exit.Click += btn_exit_Click;
-            // 
             // btn_search
             // 
-            btn_search.Location = new Point(970, 40);
+            btn_search.Location = new Point(166, 69);
             btn_search.Name = "btn_search";
-            btn_search.Size = new Size(95, 30);
+            btn_search.Size = new Size(65, 30);
             btn_search.TabIndex = 5;
             btn_search.Text = "검색";
             btn_search.UseVisualStyleBackColor = true;
             btn_search.Click += btn_search_Click;
             // 
-            // btnMy
-            // 
-            btnMy.Location = new Point(12, 27);
-            btnMy.Name = "btnMy";
-            btnMy.Size = new Size(95, 32);
-            btnMy.TabIndex = 4;
-            btnMy.Text = "마이페이지";
-            btnMy.UseVisualStyleBackColor = true;
-            btnMy.Click += btnMy_Click;
-            // 
             // lbDday
             // 
             lbDday.AutoSize = true;
             lbDday.Font = new Font("맑은 고딕", 12F, FontStyle.Bold, GraphicsUnit.Point);
-            lbDday.Location = new Point(250, 38);
+            lbDday.Location = new Point(12, 42);
             lbDday.Name = "lbDday";
             lbDday.Size = new Size(97, 21);
             lbDday.TabIndex = 8;
             lbDday.Text = "D-Day 없음";
             // 
-            // btn_Dday
-            // 
-            btn_Dday.Location = new Point(353, 35);
-            btn_Dday.Name = "btn_Dday";
-            btn_Dday.Size = new Size(66, 30);
-            btn_Dday.TabIndex = 9;
-            btn_Dday.Text = "설정";
-            btn_Dday.UseVisualStyleBackColor = true;
-            btn_Dday.Click += btn_Dday_Click;
-            // 
             // mainForm
             // 
-            AutoScaleDimensions = new SizeF(7F, 15F);
-            AutoScaleMode = AutoScaleMode.Font;
+            AutoScaleMode = AutoScaleMode.None;
             ClientSize = new Size(1076, 603);
-            Controls.Add(btn_Dday);
             Controls.Add(lbDday);
             Controls.Add(lbmain_title);
             Controls.Add(tb_search);
             Controls.Add(btn_search);
-            Controls.Add(btnMy);
-            Controls.Add(btn_exit);
             Controls.Add(tabControl1);
             Controls.Add(richTextBox1);
             Controls.Add(monthCalendar1);
@@ -328,10 +381,8 @@
         private TabPage tabPage1;
         private DataGridView dgvCalendar;
         private TabControl tabControl1;
-        private Button btn_exit;
         private Button btn_search;
         private ToolStripMenuItem tool_day;
-        private Button btnMy;
         private ToolStripMenuItem menuThemeLight;
         private ToolStripMenuItem menuThemeDark;
         private ToolStripSeparator toolStripSeparator2;
@@ -340,6 +391,16 @@
         private ToolStripMenuItem menuThemeLavender;
         private ToolStripMenuItem menuThemeCozy;
         private Label lbDday;
-        private Button btn_Dday;
+        private ToolStripMenuItem 계정ToolStripMenuItem;
+        private ToolStripMenuItem 마이페이지ToolStripMenuItem;
+        private ToolStripMenuItem 로그인ToolStripMenuItem;
+        private ToolStripMenuItem 맑은고딕ToolStripMenuItem;
+        private ToolStripMenuItem 바탕체ToolStripMenuItem;
+        private ToolStripMenuItem 돋움ToolStripMenuItem;
+        private ToolStripSeparator toolStripSeparator1;
+        private ToolStripMenuItem 한컴말랑말랑ToolStripMenuItem;
+        private ToolStripMenuItem 훈민정음가로쓰기ToolStripMenuItem;
+        private ToolStripMenuItem 한컴산뜻돋움ToolStripMenuItem;
+        private ToolStripMenuItem 디데이ToolStripMenuItem;
     }
 }

@@ -38,6 +38,7 @@
             rdoZero = new RadioButton();
             btnSave = new Button();
             btnCancel = new Button();
+            btnDelete = new Button();
             grpCountMode.SuspendLayout();
             SuspendLayout();
             // 
@@ -67,14 +68,14 @@
             lstSchedules.ItemHeight = 15;
             lstSchedules.Location = new Point(20, 90);
             lstSchedules.Name = "lstSchedules";
-            lstSchedules.Size = new Size(440, 169);
+            lstSchedules.Size = new Size(440, 124);
             lstSchedules.TabIndex = 2;
             lstSchedules.SelectedIndexChanged += lstSchedules_SelectedIndexChanged;
             // 
             // lblSelected
             // 
             lblSelected.AutoSize = true;
-            lblSelected.Location = new Point(20, 285);
+            lblSelected.Location = new Point(20, 219);
             lblSelected.Name = "lblSelected";
             lblSelected.Size = new Size(138, 15);
             lblSelected.TabIndex = 3;
@@ -82,9 +83,9 @@
             // 
             // btnNewDday
             // 
-            btnNewDday.Location = new Point(20, 320);
+            btnNewDday.Location = new Point(20, 237);
             btnNewDday.Name = "btnNewDday";
-            btnNewDday.Size = new Size(112, 23);
+            btnNewDday.Size = new Size(440, 23);
             btnNewDday.TabIndex = 4;
             btnNewDday.Text = "새 D-Day 만들기";
             btnNewDday.UseVisualStyleBackColor = true;
@@ -94,7 +95,7 @@
             // 
             grpCountMode.Controls.Add(rdoOne);
             grpCountMode.Controls.Add(rdoZero);
-            grpCountMode.Location = new Point(20, 349);
+            grpCountMode.Location = new Point(20, 278);
             grpCountMode.Name = "grpCountMode";
             grpCountMode.Size = new Size(440, 55);
             grpCountMode.TabIndex = 5;
@@ -125,7 +126,7 @@
             // 
             // btnSave
             // 
-            btnSave.Location = new Point(262, 410);
+            btnSave.Location = new Point(262, 339);
             btnSave.Name = "btnSave";
             btnSave.Size = new Size(96, 32);
             btnSave.TabIndex = 6;
@@ -136,7 +137,7 @@
             // btnCancel
             // 
             btnCancel.DialogResult = DialogResult.Cancel;
-            btnCancel.Location = new Point(364, 410);
+            btnCancel.Location = new Point(364, 339);
             btnCancel.Name = "btnCancel";
             btnCancel.Size = new Size(96, 32);
             btnCancel.TabIndex = 7;
@@ -144,12 +145,23 @@
             btnCancel.UseVisualStyleBackColor = true;
             btnCancel.Click += btnCancel_Click;
             // 
+            // btnDelete
+            // 
+            btnDelete.Location = new Point(20, 339);
+            btnDelete.Name = "btnDelete";
+            btnDelete.Size = new Size(198, 32);
+            btnDelete.TabIndex = 6;
+            btnDelete.Text = "현재 디데이 해제";
+            btnDelete.UseVisualStyleBackColor = true;
+            btnDelete.Click += btnDelete_Click;
+            // 
             // DdaySettingForm
             // 
             AutoScaleDimensions = new SizeF(7F, 15F);
             AutoScaleMode = AutoScaleMode.Font;
-            ClientSize = new Size(484, 450);
+            ClientSize = new Size(484, 399);
             Controls.Add(btnCancel);
+            Controls.Add(btnDelete);
             Controls.Add(btnSave);
             Controls.Add(grpCountMode);
             Controls.Add(btnNewDday);
@@ -181,5 +193,6 @@
         private RadioButton rdoZero;
         private Button btnSave;
         private Button btnCancel;
+        private Button btnDelete;
     }
 }
